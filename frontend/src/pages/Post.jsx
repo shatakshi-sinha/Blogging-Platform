@@ -117,35 +117,6 @@ useEffect(() => {
     }
   };
 
-
-
-  /*const handleSubmitComment = async (e) => {
-    e.preventDefault();
-    if (!commentContent.trim()) return;
-  
-    setSubmitting(true);
-    try {
-      const response = await api.post(`/comments/posts/${id}`, {
-        content: commentContent
-      });
-      
-      setPost(prev => ({
-        ...prev,
-        comments: [{
-          ...response.data,
-          name: user.name,
-          username: user.username
-        }, ...(prev.comments || [])]
-      }));
-      
-      setCommentContent('');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit comment');
-    } finally {
-      setSubmitting(false);
-    }
-  };*/
-
   const handleSubmitComment = async (e) => {
     e.preventDefault();
     if (!commentContent.trim()) return;
@@ -217,6 +188,34 @@ useEffect(() => {
     });
   };
 
+  const handleCommentEdit = (commentId, newContent) => {
+  setPost(prevPost => {
+    const updateCommentContent = (comments) => {
+      return comments.map(comment => {
+        if (comment.commentID === commentId) {
+          return {
+            ...comment,
+            content: newContent,
+            editedAt: new Date().toISOString()
+          };
+        }
+        if (comment.replies) {
+          return {
+            ...comment,
+            replies: updateCommentContent(comment.replies)
+          };
+        }
+        return comment;
+      });
+    };
+
+    return {
+      ...prevPost,
+      comments: updateCommentContent(prevPost.comments)
+    };
+  });
+};
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ 
@@ -234,14 +233,20 @@ useEffect(() => {
           {post.title}
         </Typography>
         
+        {/* Replace the existing date display with this: */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Typography variant="subtitle1" color="#6d412a">
-            By {post.name || 'Unknown author'} ({post.username || 'anonymous'})
-          </Typography>
-          <Typography variant="subtitle1" color="#7A6246" sx={{ ml: 2 }}>
-            {post.createdAt ? format(new Date(post.createdAt), 'MMM d, yyyy') : 'Unknown date'}
-          </Typography>
+        <Typography variant="subtitle1" color="#6d412a">
+          By {post.name || 'Unknown author'} ({post.username || 'anonymous'})
+        </Typography>
+        <Typography variant="subtitle1" color="#7A6246" sx={{ ml: 2, fontSize: '0.9rem' }}>
+          {post.updatedAt > post.createdAt ? (
+            `Updated ${format(new Date(post.updatedAt), 'MMM d, yyyy  (h:mm a)')}`
+          ) : (
+            format(new Date(post.createdAt), 'MMM d, yyyy (h:mm a)')
+          )}
+        </Typography>
         </Box>
+        
         
         <Box sx={{  display: 'flex', 
           gap: 2, 
@@ -358,6 +363,7 @@ useEffect(() => {
             postId={id}
             depth={0}
             onDelete={handleCommentDelete}
+            onEdit={handleCommentEdit} 
           />
         </ListItem>
       ))}
@@ -368,11 +374,13 @@ useEffect(() => {
 };
 // Add this new component inside Post.jsx
 // Update the Comment component to properly handle nested structure
-const Comment = ({ comment, postId, depth = 0, onDelete}) => {
+const Comment = ({ comment, postId, depth = 0, onDelete, onEdit }) => {
   const [replyContent, setReplyContent] = useState('');
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [submittingReply, setSubmittingReply] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(comment.content);
   const { user } = useAuth();
 
   const handleReplySubmit = async (e) => {
@@ -406,7 +414,27 @@ const Comment = ({ comment, postId, depth = 0, onDelete}) => {
       console.error('Failed to delete comment:', err);
     }
   };
-  const formattedDate = format(new Date(comment.createdAt), 'MMM d, yyyy h:mm a');
+  //const formattedDate = format(new Date(comment.createdAt), 'MMM d, yyyy h:mm a');
+
+  const handleEditSubmit = async () => {
+  try {
+    const response = await api.put(`/comments/${comment.commentID}`, {
+      content: editedContent
+    });
+    
+    if (response.data) {
+      // Update the comment in the parent state
+      onEdit(comment.commentID, editedContent);
+      setIsEditing(false);
+    } else {
+      console.error('Empty response from server');
+      // You might want to set some error state here
+    }
+  } catch (err) {
+    console.error('Error updating comment:', err);
+    // Add error handling UI feedback here
+  }
+};
 
   return (
     <Box sx={{ 
@@ -440,16 +468,51 @@ const Comment = ({ comment, postId, depth = 0, onDelete}) => {
           ml: 1, 
           color: '#8B7355' // Medium brown for date
         }}>
-        {formattedDate}
+        {format(new Date(comment.createdAt), 'MMM d, yyyy h:mm a')}
         </Typography>
+        {comment.editedAt && (
+        <Typography variant="caption" sx={{ ml: 1, color: '#8B7355', fontStyle: 'italic' }}>
+          (edited)
+        </Typography>
+      )}
       </Box>
       
-      {/* Comment content */}
-      <Typography variant="body2" paragraph sx={{ color: '#1E1E1E' }}>
-        {comment.content}
-      </Typography>
+      {/* Comment content - updated to support editing */}
+      {isEditing ? (
+        <Box sx={{ mb: 2 }}>
+          <TextField
+            fullWidth
+            multiline
+            value={editedContent}
+            onChange={(e) => setEditedContent(e.target.value)}
+            sx={{ mb: 1 }}
+          />
+          <Button
+            variant="contained"
+            size="small"
+            onClick={handleEditSubmit}
+            sx={{ mr: 1 }}
+          >
+            Save
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => {
+              setIsEditing(false);
+              setEditedContent(comment.content);
+            }}
+          >
+            Cancel
+          </Button>
+        </Box>
+      ) : (
+        <Typography variant="body2" paragraph sx={{ color: '#1E1E1E' }}>
+          {comment.content}
+        </Typography>
+      )}
       
-      {/* Action buttons - use your brown palette */}
+      {/* Action buttons - add Edit button */}
       <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
         {user && (
           <Button 
@@ -457,9 +520,7 @@ const Comment = ({ comment, postId, depth = 0, onDelete}) => {
             onClick={() => setShowReplyForm(!showReplyForm)}
             sx={{
               color: '#8B7355',
-              '&:hover': {
-                backgroundColor: '#F0E8DC'
-              }
+              '&:hover': { backgroundColor: '#F0E8DC' }
             }}
           >
             Reply
@@ -468,6 +529,16 @@ const Comment = ({ comment, postId, depth = 0, onDelete}) => {
         
         {user?.userID === comment.userID && (
           <>
+            <Button
+              size="small"
+              onClick={() => setIsEditing(true)}
+              sx={{
+                color: '#8B7355',
+                '&:hover': { backgroundColor: '#F0E8DC' }
+              }}
+            >
+              Edit
+            </Button>
             <Button
               size="small"
               color="error"
@@ -542,6 +613,7 @@ const Comment = ({ comment, postId, depth = 0, onDelete}) => {
         postId={postId}
         depth={depth + 1}
         onDelete={onDelete}
+        onEdit={onEdit}
       />
       ))}
     </Box>

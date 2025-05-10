@@ -1,22 +1,42 @@
-const db = require('../config/db');
-
+const db = require("../config/db");
 
 exports.getAllPosts = async (req, res) => {
   try {
+    // First get all published posts
     const [posts] = await db.execute(`
       SELECT p.*, u.username, u.name
       FROM post p
       JOIN user u ON p.userID = u.userID
       WHERE p.status = 'published'
-      ORDER BY p.publishedAt DESC
+      ORDER BY p.createdAt DESC
     `);
-    res.json(posts);
+
+    // Get categories for each post
+    const postsWithCategories = await Promise.all(
+      posts.map(async (post) => {
+        const [categories] = await db.execute(
+          `
+        SELECT c.catID, c.title, c.slug 
+        FROM post_category pc
+        JOIN category c ON pc.categoryId = c.catID
+        WHERE pc.postId = ?
+      `,
+          [post.postID]
+        );
+
+        return {
+          ...post,
+          categories,
+        };
+      })
+    );
+
+    res.json(postsWithCategories);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // backend/controllers/postController.js
 // In postController.js - update getPostById
@@ -24,29 +44,36 @@ exports.getAllPosts = async (req, res) => {
 exports.getPostById = async (req, res) => {
   try {
     const postId = req.params.id;
-    
+
     // 1. Get the post
-    const [posts] = await db.execute(`
+    const [posts] = await db.execute(
+      `
       SELECT p.*, u.username, u.name 
       FROM post p
       JOIN user u ON p.userID = u.userID
       WHERE p.postID = ? AND p.status = 'published'
-    `, [postId]);
+    `,
+      [postId]
+    );
 
     if (posts.length === 0) {
-      return res.status(404).json({ message: 'Post not found' });
+      return res.status(404).json({ message: "Post not found" });
     }
 
     // 2. Get categories
-    const [categories] = await db.execute(`
+    const [categories] = await db.execute(
+      `
       SELECT c.catID, c.title, c.slug 
       FROM post_category pc
       JOIN category c ON pc.categoryId = c.catID
       WHERE pc.postId = ?
-    `, [postId]);
+    `,
+      [postId]
+    );
 
     // 3. Get comments with replies (nested)
-    const [comments] = await db.execute(`
+    const [comments] = await db.execute(
+      `
       SELECT 
         pc.*,
         u.username,
@@ -56,20 +83,22 @@ exports.getPostById = async (req, res) => {
       JOIN user u ON pc.userID = u.userID
       WHERE pc.postID = ?
       ORDER BY pc.createdAt ASC
-    `, [postId]);
+    `,
+      [postId]
+    );
 
     // Build comment tree
     const buildCommentTree = (comments, parentId = null) => {
       return comments
-        .filter(comment => {
+        .filter((comment) => {
           if (parentId === null) {
             return comment.parentCommentID === null;
           }
           return comment.parentCommentID === parentId;
         })
-        .map(comment => ({
+        .map((comment) => ({
           ...comment,
-          replies: buildCommentTree(comments, comment.commentID)
+          replies: buildCommentTree(comments, comment.commentID),
         }));
     };
 
@@ -78,12 +107,11 @@ exports.getPostById = async (req, res) => {
     res.json({
       ...posts[0],
       categories,
-      comments: nestedComments
+      comments: nestedComments,
     });
-
   } catch (err) {
-    console.error('Error fetching post:', err);
-    res.status(500).json({ message: 'Server error while fetching post' });
+    console.error("Error fetching post:", err);
+    res.status(500).json({ message: "Server error while fetching post" });
   }
 };
 
@@ -124,18 +152,15 @@ exports.getPostById = async (req, res) => {
   }
 };*/
 
-
 exports.createPost = async (req, res) => {
   try {
     const { title, slug, content, categoryIds } = req.body;
     const userId = req.user.id; // From auth middleware
 
-
     // Validate required fields
     if (!title || !slug) {
-      return res.status(400).json({ message: 'Title and slug are required' });
+      return res.status(400).json({ message: "Title and slug are required" });
     }
-
 
     // Create post
     const [result] = await db.execute(
@@ -145,17 +170,15 @@ exports.createPost = async (req, res) => {
       [userId, title, slug, content]
     );
 
-
     // Handle categories if provided
     if (categoryIds && categoryIds.length > 0) {
       for (const categoryId of categoryIds) {
         await db.execute(
-          'INSERT INTO post_category (postId, categoryId) VALUES (?, ?)',
+          "INSERT INTO post_category (postId, categoryId) VALUES (?, ?)",
           [result.insertId, categoryId]
         );
       }
     }
-
 
     // Return the created post with author info
     const [newPost] = await db.execute(
@@ -166,20 +189,18 @@ exports.createPost = async (req, res) => {
       [result.insertId]
     );
 
-
     res.status(201).json(newPost[0]);
   } catch (err) {
     console.error(err);
-   
+
     // Handle duplicate slug error
-    if (err.code === 'ER_DUP_ENTRY') {
-      return res.status(400).json({ message: 'Slug must be unique' });
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(400).json({ message: "Slug must be unique" });
     }
-   
-    res.status(500).json({ message: 'Server error' });
+
+    res.status(500).json({ message: "Server error" });
   }
 };
-
 
 exports.updatePost = async (req, res) => {
   try {
@@ -190,20 +211,20 @@ exports.updatePost = async (req, res) => {
     if (title === undefined || content === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'Title and content are required',
-        received: { title, content }
+        message: "Title and content are required",
+        received: { title, content },
       });
     }
 
     // Convert empty strings to null
-    const cleanTitle = title.trim() === '' ? null : title;
-    const cleanContent = content.trim() === '' ? null : content;
+    const cleanTitle = title.trim() === "" ? null : title;
+    const cleanContent = content.trim() === "" ? null : content;
 
     // Debug log the values
-    console.log('Updating post with:', {
+    console.log("Updating post with:", {
       postId,
       title: cleanTitle,
-      content: cleanContent
+      content: cleanContent,
     });
 
     const [result] = await db.execute(
@@ -216,25 +237,27 @@ exports.updatePost = async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({
         success: false,
-        message: 'No post found with that ID'
+        message: "No post found with that ID",
       });
     }
 
     res.json({
       success: true,
-      message: 'Post updated successfully',
-      postId
+      message: "Post updated successfully",
+      postId,
     });
-
   } catch (err) {
-    console.error('Update post error:', err);
+    console.error("Update post error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to update post',
-      error: process.env.NODE_ENV === 'development' ? {
-        message: err.message,
-        stack: err.stack
-      } : undefined
+      message: "Failed to update post",
+      error:
+        process.env.NODE_ENV === "development"
+          ? {
+              message: err.message,
+              stack: err.stack,
+            }
+          : undefined,
     });
   }
 };
@@ -242,30 +265,28 @@ exports.updatePost = async (req, res) => {
 exports.deletePost = async (req, res) => {
   try {
     const postId = req.params.id;
-   
+
     // Verify post exists and belongs to user
     const [posts] = await db.execute(
-      'SELECT * FROM post WHERE postID = ? AND userID = ?',
+      "SELECT * FROM post WHERE postID = ? AND userID = ?",
       [postId, req.user.id]
     );
-   
+
     if (posts.length === 0) {
-      return res.status(404).json({ message: 'Post not found or not authorized' });
+      return res
+        .status(404)
+        .json({ message: "Post not found or not authorized" });
     }
-   
+
     // Delete post (CASCADE will handle related records in post_category and post_comment)
-    await db.execute(
-      'DELETE FROM post WHERE postID = ?',
-      [postId]
-    );
-   
-    res.json({ message: 'Post deleted successfully' });
+    await db.execute("DELETE FROM post WHERE postID = ?", [postId]);
+
+    res.json({ message: "Post deleted successfully" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // Add this right before module.exports
 exports.getPostsByUser = async (req, res) => {
@@ -279,7 +300,7 @@ exports.getPostsByUser = async (req, res) => {
     res.json(posts);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -295,10 +316,10 @@ exports.getPostsByCurrentUser = async (req, res) => {
     );
     res.json(posts);
   } catch (err) {
-    console.error('Error fetching user posts:', err);
-    res.status(500).json({ 
-      message: 'Failed to fetch your posts',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    console.error("Error fetching user posts:", err);
+    res.status(500).json({
+      message: "Failed to fetch your posts",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -309,9 +330,9 @@ exports.createComment = async (req, res) => {
   try {
     const { content } = req.body;
     const postId = req.params.id;
-    
+
     if (!content || !content.trim()) {
-      return res.status(400).json({ message: 'Comment cannot be empty' });
+      return res.status(400).json({ message: "Comment cannot be empty" });
     }
 
     const [result] = await db.execute(
@@ -334,10 +355,10 @@ exports.createComment = async (req, res) => {
 
     res.status(201).json(comment[0]);
   } catch (err) {
-    console.error('Comment creation error:', err);
-    res.status(500).json({ 
-      message: 'Failed to add comment',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    console.error("Comment creation error:", err);
+    res.status(500).json({
+      message: "Failed to add comment",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -357,7 +378,7 @@ exports.getComments = async (req, res) => {
     );
     res.json(comments);
   } catch (err) {
-    console.error('Get comments error:', err);
-    res.status(500).json({ message: 'Failed to load comments' });
+    console.error("Get comments error:", err);
+    res.status(500).json({ message: "Failed to load comments" });
   }
 };

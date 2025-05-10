@@ -147,7 +147,7 @@ exports.createComment = async (req, res) => {
   }
 };
 
-/*exports.updateComment = async (req, res) => {
+exports.updateComment = async (req, res) => {
   try {
     const { content } = req.body;
     const commentId = req.params.id;
@@ -185,7 +185,7 @@ exports.createComment = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
-};*/
+};
 
 exports.deleteComment = async (req, res) => {
   try {

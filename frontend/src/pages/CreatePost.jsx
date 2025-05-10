@@ -128,8 +128,14 @@ const CreatePost = () => {
           />
 
 
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Categories</InputLabel>
+          <FormControl fullWidth margin="normal" sx={{ 
+              '& .MuiInputLabel-root': {
+                backgroundColor: 'background.paper',
+                padding: '0 4px',
+                transform: 'translate(14px, -9px) scale(0.75)'
+              }
+            }}>
+            <InputLabel shrink>Categories</InputLabel>
             <Select
               multiple
               value={selectedCategories}
@@ -144,6 +150,7 @@ const CreatePost = () => {
                   ))}
                 </Box>
               )}
+              label="Categories"
             >
               {categories.map((category) => (
                 <MenuItem key={category.catID} value={category.catID}>
