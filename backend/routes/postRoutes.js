@@ -7,7 +7,8 @@ const authMiddleware = require('../middlewares/authMiddleware');
 router.get('/', postController.getAllPosts);
 router.get('/:id', postController.getPostById);
 router.get('/user/me', authMiddleware, postController.getPostsByUser);
-
+router.get('/user/drafts', authMiddleware, postController.getUserDrafts);
+router.put('/:id/publish', authMiddleware, postController.publishDraft);
 // Protected routes
 router.post('/', authMiddleware, postController.createPost);
 router.post('/:id/comments', authMiddleware, postController.createComment);

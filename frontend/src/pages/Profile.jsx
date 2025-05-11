@@ -43,12 +43,32 @@ const Profile = () => {
   const [tabValue, setTabValue] = useState(0);
   const [editingPost, setEditingPost] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [tempPostData, setTempPostData] = useState({ title: '', content: '' });
+  const [tempPostData, setTempPostData] = useState({ title: '', description: '', content: '' });
   const [deleteAccountConfirm, setDeleteAccountConfirm] = useState(false);
   const [password, setPassword] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [passwordError, setPasswordError] = useState('');
-
+  
+  const handlePublishDraft = async (postId) => {
+  try {
+    const response = await api.put(`/posts/${postId}/publish`);
+    
+    if (response.data.success) {
+      setPosts(posts.map(post => 
+        post.postID === postId ? { 
+          ...post, 
+          status: 'published',
+          publishedAt: new Date().toISOString()
+        } : post
+      ));
+      setSuccess('Draft published successfully!');
+    } else {
+      setError(response.data.message || 'Failed to publish draft');
+    }
+  } catch (err) {
+    setError(err.response?.data?.message || 'Failed to publish draft');
+  }
+};
 
   useEffect(() => {
     if (!user) {
@@ -81,22 +101,31 @@ const Profile = () => {
 
   const handleEditClick = (post) => {
     setEditingPost(post);
-    setTempPostData({ title: post.title, content: post.content });
+    setTempPostData({ title: post.title, description: post.description || '', content: post.content });
   };
 
 
   const handleSaveEdit = async () => {
-    try {
-      await api.put(`/posts/${editingPost.postID}`, tempPostData);
-      setPosts(posts.map(p =>
-        p.postID === editingPost.postID ? { ...p, ...tempPostData } : p
-      ));
-      setEditingPost(null);
-      setSuccess('Post updated successfully!');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update post');
-    }
-  };
+  try {
+    const response = await api.put(`/posts/${editingPost.postID}`, {
+      title: tempPostData.title,
+      description: tempPostData.description, 
+      content: tempPostData.content,
+    });
+    
+    // Update the posts list with the returned post data
+    setPosts(posts.map(p =>
+      p.postID === editingPost.postID ? { ...p, title: tempPostData.title,
+        description: tempPostData.description, // Add this
+        content: tempPostData.content } : p
+    ));
+    
+    setEditingPost(null);
+    setSuccess('Post updated successfully!');
+  } catch (err) {
+    setError(err.response?.data?.message || 'Failed to update post');
+  }
+};
 
 
   const handleDeletePost = async (postId) => {
@@ -238,9 +267,23 @@ const handleDeleteAccount = async () => {
                     <ListItem alignItems="flex-start">
                       <ListItemText
                         primary={
-                          <Typography variant="h6" component="div">
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="h6" component="span">
                             {post.title}
                           </Typography>
+                          {post.status === 'draft' && (
+                            <Chip 
+                              label="Draft" 
+                              size="small" 
+                              color="warning"
+                              sx={{ ml: 1, backgroundColor: '#FBDB93',  // Light yellow background
+                              color: '#5D4037',           // Dark brown text
+                              fontWeight: 'bold',
+                              border: '1px solid #FFD600'  // Gold border
+                              }} 
+                            />
+                          )}
+                        </Box>
                         }
                         secondary={
                           <>
@@ -265,16 +308,49 @@ const handleDeleteAccount = async () => {
                         sx={{ mr: 2 }}
                       />
                       <Box sx={{ display: 'flex', gap: 1 }}>
-                        <IconButton onClick={() => handleEditClick(post)} color="primary">
-                          <Edit />
-                        </IconButton>
-                        <IconButton onClick={() => setDeleteConfirm(post.postID)} color="error">
-                          <Delete />
-                        </IconButton>
-                      </Box>
-                    </ListItem>
-                  <Divider component="li" />
-                </React.Fragment>
+                    {post.status === 'draft' && (
+                      <Button
+                        variant="contained"
+                        size="small"
+                        color="success"
+                        onClick={() => handlePublishDraft(post.postID)}
+                        sx={{ 
+                          alignSelf: 'center',
+                          textTransform: 'none'
+                        }}
+                      >
+                        Publish
+                      </Button>
+                    )}
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+  {/* Publish Button (if you added it) */}
+  <IconButton 
+    onClick={() => handleEditClick(post)}
+    sx={{ 
+      color: '#5C4033', // Classic brown color
+      '&:hover': {
+        backgroundColor: 'rgba(139, 69, 19, 0.1)' // Light brown hover
+      }
+    }}
+  >
+    <Edit />
+  </IconButton>
+  <IconButton 
+    onClick={() => setDeleteConfirm(post.postID)}
+    sx={{ 
+      color: '#d32f2f', // MUI's default error red
+      '&:hover': {
+        backgroundColor: 'rgba(211, 47, 47, 0.1)' // Light red hover
+      }
+    }}
+  >
+    <Delete />
+  </IconButton>
+</Box>
+                  </Box>
+                </ListItem>
+                <Divider component="li" />
+              </React.Fragment>
               ))}
             </List>
           ) : (
@@ -338,12 +414,25 @@ const handleDeleteAccount = async () => {
       onChange={(e) => setTempPostData({ ...tempPostData, title: e.target.value })}
     />
 
+    {/* NEW: Description Field */}
+    <TextField
+      fullWidth
+      margin="normal"
+      label="Description"
+      variant="outlined"
+      multiline
+      rows={3}
+      value={tempPostData.description}
+      onChange={(e) => setTempPostData({...tempPostData, description: e.target.value})}
+    />
+
+
     {/* Custom Toolbar */}
-    <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+    <Box sx={{ display: 'flex', gap: 1, mb: 1, mt: 1 }}>
       <Button size="small" onClick={() => document.execCommand('bold')}><b>B</b></Button>
       <Button size="small" onClick={() => document.execCommand('italic')}><i>I</i></Button>
       <Button size="small" onClick={() => document.execCommand('underline')}><u>U</u></Button>
-      <Button size="small" onClick={() => document.execCommand('formatBlock', false, 'h3')}>H3</Button>
+    {/*<Button size="small" onClick={() => document.execCommand('formatBlock', false, 'h3')}>H3</Button>*/}
       <Button size="small" onClick={() => document.execCommand('justifyLeft')}>Left</Button>
       <Button size="small" onClick={() => document.execCommand('justifyCenter')}>Center</Button>
       <Button size="small" onClick={() => document.execCommand('justifyRight')}>Right</Button>
@@ -351,23 +440,50 @@ const handleDeleteAccount = async () => {
     </Box>
 
     {/* Rich Text Editor */}
-    <Box
-      contentEditable
-      suppressContentEditableWarning
-      sx={{
-        border: '1px solid #ccc',
-        borderRadius: 1,
-        minHeight: 150,
-        padding: 2,
-        mb: 2,
-        whiteSpace: 'pre-wrap',
-        overflowY: 'auto'
-      }}
-      onInput={(e) =>
-        setTempPostData({ ...tempPostData, content: e.currentTarget.innerHTML })
+    <Box sx={{ 
+  position: 'relative',
+  marginTop: 2, 
+  marginBottom: 1
+}}>
+  {/* The actual content editable div */}
+  <Box
+    contentEditable
+    suppressContentEditableWarning
+    sx={{
+      border: '1px solid rgba(0, 0, 0, 0.23)',
+      borderRadius: '4px',
+      minHeight: '200px',
+      padding: '16.5px 14px',
+      '&:hover': {
+        borderColor: 'text.primary'
+      },
+      '&:focus-within': {
+        borderColor: 'primary.main',
+        borderWidth: '2px'
       }
-      dangerouslySetInnerHTML={{ __html: tempPostData.content }}
-    />
+    }}
+    onInput={(e) => setTempPostData({...tempPostData, content: e.currentTarget.innerHTML})}
+    dangerouslySetInnerHTML={{ __html: tempPostData.content }}
+  />
+  
+  {/* The floating label */}
+  <Typography
+    component="span"
+    sx={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      transform: 'translate(14px, -50%) scale(0.75)',
+      backgroundColor: 'background.paper',
+      padding: '0 4px',
+      color: 'text.secondary',
+      pointerEvents: 'none',
+      transition: 'transform 200ms cubic-bezier(0.0, 0, 0.2, 1) 0ms',
+    }}
+  >
+    Content
+  </Typography>
+</Box>
 
   </DialogContent>
   <DialogActions>
@@ -375,8 +491,9 @@ const handleDeleteAccount = async () => {
     <Button
       onClick={handleSaveEdit}
       variant="contained"
-      color="primary"
-      disabled={!tempPostData.title || !tempPostData.content}
+      //color="primary"
+      //disabled={!tempPostData.title || !tempPostData.content}
+      sx={{ bgcolor: '#5D4037', '&:hover': { bgcolor: '#3E2723' } }} 
     >
       Save Changes
     </Button>

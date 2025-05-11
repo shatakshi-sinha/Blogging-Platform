@@ -43,6 +43,7 @@ const CreatePost = () => {
   const contentRef = useRef(null);
   const navigate = useNavigate();
   const [description, setDescription] = useState('');
+  const [isDraft, setIsDraft] = useState(false); 
 
 
   useEffect(() => {
@@ -83,21 +84,17 @@ const CreatePost = () => {
   };
  
  
-  const handleSubmit = async (e, isDraft = false) => {
+  const handleSubmit = async (e, shouldSaveAsDraft = false) => {
     e.preventDefault();
-
-
-
 
     if (!title || !slug) {
       setError('Title and slug are required');
       return;
     }
 
-
-
-
     setLoading(true);
+    setIsDraft(shouldSaveAsDraft);
+
     try {
       await api.post('/posts', {
         title,
@@ -105,7 +102,7 @@ const CreatePost = () => {
         description, // Add this
         content: contentRef.current.innerHTML,
         categoryIds: selectedCategories,
-        isDraft,
+        isDraft: shouldSaveAsDraft,
       });
       setSuccess(true);
       setTimeout(() => navigate('/profile'), 1000);
@@ -117,16 +114,12 @@ const CreatePost = () => {
   };
 
 
-
-
   return (
     <Container maxWidth="md">
       <Box sx={{ mt: 4 }}>
         <Typography variant="h4" gutterBottom>
           Create New Post
         </Typography>
-
-
 
 
         <Box component="form" onSubmit={(e) => handleSubmit(e, false)} sx={{ mt: 3 }}>
@@ -140,8 +133,6 @@ const CreatePost = () => {
           />
 
 
-
-
           <TextField
             fullWidth
             margin="normal"
@@ -151,8 +142,6 @@ const CreatePost = () => {
             helperText="URL-friendly version of your post title"
             required
           />
-
-
 
 
           <FormControl fullWidth margin="normal">
@@ -198,8 +187,6 @@ const CreatePost = () => {
           <Typography sx={{ mt: 2, mb: 1 }}>Content</Typography>
 
 
-
-
           <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
             <IconButton onClick={() => formatText('bold')}><FormatBoldIcon /></IconButton>
             <IconButton onClick={() => formatText('italic')}><FormatItalicIcon /></IconButton>
@@ -235,14 +222,16 @@ const CreatePost = () => {
 
           <Stack direction="row" spacing={2}>
             <Button
-              type="submit"
+              type="button"
               variant="contained"
               size="large"
               disabled={loading}
+              onClick={(e) => handleSubmit(e, false)}
             >
               {loading ? <CircularProgress size={24} /> : 'Publish Post'}
             </Button>
             <Button
+              type="button"
               variant="outlined"
               size="large"
               disabled={loading}
@@ -263,10 +252,10 @@ const CreatePost = () => {
       </Snackbar>
 
 
-
-
       <Snackbar open={success} autoHideDuration={6000} onClose={() => setSuccess(false)}>
-        <Alert severity="success">Post published successfully!</Alert>
+        <Alert severity="success">
+           {isDraft ? 'Post saved as draft successfully!' : 'Post published successfully!'}
+        </Alert>
       </Snackbar>
     </Container>
   );

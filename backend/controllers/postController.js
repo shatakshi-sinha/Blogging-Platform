@@ -42,6 +42,22 @@ exports.getAllPosts = async (req, res) => {
   }
 };
 
+// Add a new function to get drafts
+exports.getUserDrafts = async (req, res) => {
+  try {
+    const [drafts] = await db.execute(
+      `SELECT p.* FROM post p
+       WHERE p.userID = ? AND p.status = 'draft'
+       ORDER BY p.createdAt DESC`,
+      [req.user.id]
+    );
+    res.json(drafts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 
 // backend/controllers/postController.js
 // In postController.js - update getPostById
@@ -168,26 +184,24 @@ exports.getPostById = async (req, res) => {
 
 exports.createPost = async (req, res) => {
   try {
-    const { title, slug, content, description, categoryIds } = req.body;
-    const userId = req.user.id; // From auth middleware
+    const { title, slug, content, description, categoryIds, isDraft } = req.body;
+    const userId = req.user.id;
 
-
-    // Validate required fields
     if (!title || !slug) {
       return res.status(400).json({ message: "Title and slug are required" });
     }
 
+    // Determine status based on isDraft flag
+    const status = isDraft ? 'draft' : 'published';
+    const publishedAt = isDraft ? null : new Date();
 
-    // Create post
     const [result] = await db.execute(
       `INSERT INTO post
-      (userID, title, slug, createdAt, content, description, status)
-      VALUES (?, ?, ?, NOW(), ?, ?, 'published')`,
-      [userId, title, slug, content, description] // Add description
+      (userID, title, slug, createdAt, content, description, status, publishedAt)
+      VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)`,
+      [userId, title, slug, content, description, status, publishedAt]
     );
 
-
-    // Handle categories if provided
     if (categoryIds && categoryIds.length > 0) {
       for (const categoryId of categoryIds) {
         await db.execute(
@@ -197,8 +211,6 @@ exports.createPost = async (req, res) => {
       }
     }
 
-
-    // Return the created post with author info
     const [newPost] = await db.execute(
       `SELECT p.*, u.username, u.name as authorName
        FROM post p
@@ -207,18 +219,12 @@ exports.createPost = async (req, res) => {
       [result.insertId]
     );
 
-
     res.status(201).json(newPost[0]);
   } catch (err) {
     console.error(err);
-
-
-    // Handle duplicate slug error
     if (err.code === "ER_DUP_ENTRY") {
       return res.status(400).json({ message: "Slug must be unique" });
     }
-
-
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -226,66 +232,47 @@ exports.createPost = async (req, res) => {
 
 exports.updatePost = async (req, res) => {
   try {
-    const { title, content } = req.body;
+    const { title, content, description } = req.body; // Add description here
     const postId = req.params.id;
 
-
-    // Validate required fields
-    if (title === undefined || content === undefined) {
+    // More flexible validation
+    if (!title || !content) {
       return res.status(400).json({
         success: false,
-        message: "Title and content are required",
-        received: { title, content },
+        message: "Title and content are required"
       });
     }
 
-
-    // Convert empty strings to null
-    const cleanTitle = title.trim() === "" ? null : title;
-    const cleanContent = content.trim() === "" ? null : content;
-
-
-    // Debug log the values
-    console.log("Updating post with:", {
-      postId,
-      title: cleanTitle,
-      content: cleanContent,
-    });
-
-
     const [result] = await db.execute(
-    `UPDATE post
-      SET title = ?, content = ?, description = ?, updatedAt = NOW()
-      WHERE postID = ?`,
-    [cleanTitle, cleanContent, req.body.description, postId] // Add description
+      `UPDATE post 
+       SET title = ?, content = ?, description = ?, updatedAt = NOW() 
+       WHERE postID = ?`,
+      [title, content, description || null, postId] // Handle description
     );
-
 
     if (result.affectedRows === 0) {
       return res.status(404).json({
         success: false,
-        message: "No post found with that ID",
+        message: "No post found with that ID"
       });
     }
 
+    // Return the updated post
+    const [updatedPost] = await db.execute(
+      `SELECT p.* FROM post p WHERE p.postID = ?`,
+      [postId]
+    );
 
     res.json({
       success: true,
       message: "Post updated successfully",
-      postId,
+      post: updatedPost[0]
     });
   } catch (err) {
     console.error("Update post error:", err);
     res.status(500).json({
       success: false,
-      message: "Failed to update post",
-      error:
-        process.env.NODE_ENV === "development"
-          ? {
-              message: err.message,
-              stack: err.stack,
-            }
-          : undefined,
+      message: "Failed to update post"
     });
   }
 };
@@ -421,5 +408,46 @@ exports.getComments = async (req, res) => {
   } catch (err) {
     console.error("Get comments error:", err);
     res.status(500).json({ message: "Failed to load comments" });
+  }
+};
+
+exports.publishDraft = async (req, res) => {
+  try {
+    const postId = req.params.id;
+    
+    // 1. Verify the post exists and is a draft
+    const [post] = await db.execute(
+      'SELECT * FROM post WHERE postID = ? AND userID = ?',
+      [req.params.id, req.user.id]
+    );
+    
+    if (post.length === 0) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Draft post not found or already published" 
+      });
+    }
+
+    // 2. Update the post status
+    await db.execute(
+      `UPDATE post 
+       SET status = 'published', 
+           publishedAt = NOW() 
+       WHERE postID = ?`,
+      [postId]
+    );
+
+    // 3. Return success response
+    res.json({ 
+      success: true,
+      message: 'Draft published successfully',
+      postId
+    });
+  } catch (err) {
+    console.error('Publish draft error:', err);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to publish draft' 
+    });
   }
 };
