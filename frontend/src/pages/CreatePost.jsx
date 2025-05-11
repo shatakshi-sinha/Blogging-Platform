@@ -29,6 +29,8 @@ import FormatAlignJustifyIcon from '@mui/icons-material/FormatAlignJustify';
 import TitleIcon from '@mui/icons-material/Title';
 
 
+
+
 const CreatePost = () => {
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
@@ -40,6 +42,7 @@ const CreatePost = () => {
   const [success, setSuccess] = useState(false);
   const contentRef = useRef(null);
   const navigate = useNavigate();
+  const [description, setDescription] = useState('');
 
 
   useEffect(() => {
@@ -53,8 +56,12 @@ const CreatePost = () => {
     };
 
 
+
+
     fetchCategories();
   }, []);
+
+
 
 
   useEffect(() => {
@@ -69,13 +76,17 @@ const CreatePost = () => {
   }, [title, slug]);
 
 
+
+
   const formatText = (command, value = null) => {
     document.execCommand(command, false, value);
   };
-  
-  
+ 
+ 
   const handleSubmit = async (e, isDraft = false) => {
     e.preventDefault();
+
+
 
 
     if (!title || !slug) {
@@ -84,11 +95,14 @@ const CreatePost = () => {
     }
 
 
+
+
     setLoading(true);
     try {
       await api.post('/posts', {
         title,
         slug,
+        description, // Add this
         content: contentRef.current.innerHTML,
         categoryIds: selectedCategories,
         isDraft,
@@ -103,12 +117,16 @@ const CreatePost = () => {
   };
 
 
+
+
   return (
     <Container maxWidth="md">
       <Box sx={{ mt: 4 }}>
         <Typography variant="h4" gutterBottom>
           Create New Post
         </Typography>
+
+
 
 
         <Box component="form" onSubmit={(e) => handleSubmit(e, false)} sx={{ mt: 3 }}>
@@ -122,6 +140,8 @@ const CreatePost = () => {
           />
 
 
+
+
           <TextField
             fullWidth
             margin="normal"
@@ -133,14 +153,10 @@ const CreatePost = () => {
           />
 
 
-          <FormControl fullWidth margin="normal" sx={{ 
-              '& .MuiInputLabel-root': {
-                backgroundColor: 'background.paper',
-                padding: '0 4px',
-                transform: 'translate(14px, -9px) scale(0.75)'
-              }
-            }}>
-            <InputLabel shrink>Categories</InputLabel>
+
+
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Categories</InputLabel>
             <Select
               multiple
               value={selectedCategories}
@@ -166,20 +182,35 @@ const CreatePost = () => {
           </FormControl>
 
 
+         
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Post Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            helperText="Brief summary of your post (shown on post cards)"
+            multiline
+            rows={3}
+          />
+
+
           <Typography sx={{ mt: 2, mb: 1 }}>Content</Typography>
 
 
+
+
           <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-  <IconButton onClick={() => formatText('bold')}><FormatBoldIcon /></IconButton>
-  <IconButton onClick={() => formatText('italic')}><FormatItalicIcon /></IconButton>
-  <IconButton onClick={() => formatText('underline')}><FormatUnderlinedIcon /></IconButton>
-  <IconButton onClick={() => formatText('formatBlock', '<h1>')}><TitleIcon /></IconButton>
-  <IconButton onClick={() => formatText('justifyLeft')}><FormatAlignLeftIcon /></IconButton>
-  <IconButton onClick={() => formatText('justifyCenter')}><FormatAlignCenterIcon /></IconButton>
-  <IconButton onClick={() => formatText('justifyRight')}><FormatAlignRightIcon /></IconButton>
-  <IconButton onClick={() => formatText('justifyFull')}><FormatAlignJustifyIcon /></IconButton>
-  <IconButton onClick={() => formatText('removeFormat')}><FormatClearIcon /></IconButton>
-</Stack>
+            <IconButton onClick={() => formatText('bold')}><FormatBoldIcon /></IconButton>
+            <IconButton onClick={() => formatText('italic')}><FormatItalicIcon /></IconButton>
+            <IconButton onClick={() => formatText('underline')}><FormatUnderlinedIcon /></IconButton>
+            <IconButton onClick={() => formatText('formatBlock', '<h1>')}><TitleIcon /></IconButton>
+            <IconButton onClick={() => formatText('justifyLeft')}><FormatAlignLeftIcon /></IconButton>
+            <IconButton onClick={() => formatText('justifyCenter')}><FormatAlignCenterIcon /></IconButton>
+            <IconButton onClick={() => formatText('justifyRight')}><FormatAlignRightIcon /></IconButton>
+            <IconButton onClick={() => formatText('justifyFull')}><FormatAlignJustifyIcon /></IconButton>
+            <IconButton onClick={() => formatText('removeFormat')}><FormatClearIcon /></IconButton>
+          </Stack>
 
 
 
@@ -198,6 +229,8 @@ const CreatePost = () => {
             }}
             onInput={(e) => setContent(e.currentTarget.innerHTML)}
           />
+
+
 
 
           <Stack direction="row" spacing={2}>
@@ -222,10 +255,14 @@ const CreatePost = () => {
       </Box>
 
 
+
+
       {/* Error/Success notifications */}
       <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
         <Alert severity="error">{error}</Alert>
       </Snackbar>
+
+
 
 
       <Snackbar open={success} autoHideDuration={6000} onClose={() => setSuccess(false)}>
@@ -234,6 +271,5 @@ const CreatePost = () => {
     </Container>
   );
 };
-
 
 export default CreatePost;

@@ -31,6 +31,7 @@ import api from '../services/api';
 import { formatPostDateTime } from '../utils/dateUtils';
 import { deleteAccount } from '../services/auth';
 
+
 const Profile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -48,11 +49,13 @@ const Profile = () => {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [passwordError, setPasswordError] = useState('');
 
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
+
 
     const fetchProfile = async () => {
       try {
@@ -61,7 +64,7 @@ const Profile = () => {
           api.get('/auth/me'),
           api.get('/posts/user/me')
         ]);
-        
+       
         setProfile(profileRes.data);
         setPosts(postsRes.data);
       } catch (err) {
@@ -71,18 +74,21 @@ const Profile = () => {
       }
     };
 
+
     fetchProfile();
   }, [user, navigate]);
+
 
   const handleEditClick = (post) => {
     setEditingPost(post);
     setTempPostData({ title: post.title, content: post.content });
   };
 
+
   const handleSaveEdit = async () => {
     try {
       await api.put(`/posts/${editingPost.postID}`, tempPostData);
-      setPosts(posts.map(p => 
+      setPosts(posts.map(p =>
         p.postID === editingPost.postID ? { ...p, ...tempPostData } : p
       ));
       setEditingPost(null);
@@ -91,6 +97,7 @@ const Profile = () => {
       setError(err.response?.data?.message || 'Failed to update post');
     }
   };
+
 
   const handleDeletePost = async (postId) => {
     try {
@@ -103,11 +110,13 @@ const Profile = () => {
     }
   };
 
+
   const handleLogout = () => {
     logout();
     navigate('/');
     window.location.reload(); // This forces a page reload after logout
-  }; 
+  };
+
 
 // In your handleDeleteAccount function:
 const handleDeleteAccount = async () => {
@@ -130,10 +139,13 @@ const handleDeleteAccount = async () => {
 };
 
 
+
+
   const handleCloseSnackbar = () => {
     setError('');
     setSuccess('');
   };
+
 
   if (loading) {
     return (
@@ -142,6 +154,7 @@ const handleDeleteAccount = async () => {
       </Container>
     );
   }
+
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -200,7 +213,7 @@ const handleDeleteAccount = async () => {
           </Box>
         </Box>
       </Paper>
-      
+     
       <Tabs
         value={tabValue}
         onChange={(e, newValue) => setTabValue(newValue)}
@@ -210,58 +223,56 @@ const handleDeleteAccount = async () => {
         <Tab label="My Posts" icon={<Edit />} />
         <Tab label="Account Settings" icon={<Settings />} />
       </Tabs>
-      
+     
       {tabValue === 0 && (
         <Box>
           <Typography variant="h5" component="h2" gutterBottom>
             My Posts ({posts.length})
           </Typography>
-          
+         
           {posts.length > 0 ? (
             <List sx={{ bgcolor: 'background.paper' }}>
               {posts.map(post => (
                 <React.Fragment key={post.postID}>
-                  <ListItem alignItems="flex-start">
-                    <ListItemText
-                      primary={
-                        <Typography variant="h6" component="div">
-                          {post.title}
-                        </Typography>
-                      }
-                      secondary={
-                        <>
-                          <Typography
-                            component="span"
-                            variant="body2"
-                            color="text.primary"
-                          >
-                            {formatPostDateTime(post)}
+                 
+                    <ListItem alignItems="flex-start">
+                      <ListItemText
+                        primary={
+                          <Typography variant="h6" component="div">
+                            {post.title}
                           </Typography>
-                          <br />
-                          {post.content.length > 100 
-                            ? `${post.content.substring(0, 100)}...` 
-                            : post.content}
-                        </>
-                      }
-                      sx={{ mr: 2 }}
-                    />
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton 
-                        onClick={() => handleEditClick(post)}
-                        color="primary"
-                        aria-label="edit post"
-                      >
-                        <Edit />
-                      </IconButton>
-                      <IconButton 
-                        onClick={() => setDeleteConfirm(post.postID)}
-                        color="error"
-                        aria-label="delete post"
-                      >
-                        <Delete />
-                      </IconButton>
-                    </Box>
-                  </ListItem>
+                        }
+                        secondary={
+                          <>
+                            <Typography
+                              component="span"
+                              variant="body2"
+                              color="text.primary"
+                              display="block"
+                              sx={{ mb: 1 }}
+                            >
+                              {formatPostDateTime(post)}
+                            </Typography>
+                            <Typography
+                              component="span"
+                              variant="body2"
+                              color="text.secondary"
+                            >
+                              {post.description || "No description available"}
+                            </Typography>
+                          </>
+                        }
+                        sx={{ mr: 2 }}
+                      />
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <IconButton onClick={() => handleEditClick(post)} color="primary">
+                          <Edit />
+                        </IconButton>
+                        <IconButton onClick={() => setDeleteConfirm(post.postID)} color="error">
+                          <Delete />
+                        </IconButton>
+                      </Box>
+                    </ListItem>
                   <Divider component="li" />
                 </React.Fragment>
               ))}
@@ -283,7 +294,7 @@ const handleDeleteAccount = async () => {
           )}
         </Box>
       )}
-      
+     
       {tabValue === 1 && (
         <Paper sx={{ p: 3 }}>
           <Typography variant="h5" component="h2" gutterBottom>
@@ -297,7 +308,7 @@ const handleDeleteAccount = async () => {
               {profile?.email}
             </Typography>
           </Box>
-          
+         
           <Button
             variant="contained"
             color="primary"
@@ -308,47 +319,70 @@ const handleDeleteAccount = async () => {
         </Paper>
       )}
 
-      {/* Edit Dialog */}
-      <Dialog
-        open={!!editingPost}
-        onClose={() => setEditingPost(null)}
-        fullWidth
-        maxWidth="md"
-      >
-        <DialogTitle>Edit Post</DialogTitle>
-        <DialogContent dividers>
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Title"
-            variant="outlined"
-            value={tempPostData.title}
-            onChange={(e) => setTempPostData({...tempPostData, title: e.target.value})}
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Content"
-            variant="outlined"
-            multiline
-            minRows={6}
-            maxRows={15}
-            value={tempPostData.content}
-            onChange={(e) => setTempPostData({...tempPostData, content: e.target.value})}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditingPost(null)}>Cancel</Button>
-          <Button
-            onClick={handleSaveEdit}
-            variant="contained"
-            color="primary"
-            disabled={!tempPostData.title || !tempPostData.content}
-          >
-            Save Changes
-          </Button>
-        </DialogActions>
-      </Dialog>
+
+      {/* Edit Dialog with Rich Text Editor */}
+<Dialog
+  open={!!editingPost}
+  onClose={() => setEditingPost(null)}
+  fullWidth
+  maxWidth="md"
+>
+  <DialogTitle>Edit Post</DialogTitle>
+  <DialogContent dividers>
+    <TextField
+      fullWidth
+      margin="normal"
+      label="Title"
+      variant="outlined"
+      value={tempPostData.title}
+      onChange={(e) => setTempPostData({ ...tempPostData, title: e.target.value })}
+    />
+
+    {/* Custom Toolbar */}
+    <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+      <Button size="small" onClick={() => document.execCommand('bold')}><b>B</b></Button>
+      <Button size="small" onClick={() => document.execCommand('italic')}><i>I</i></Button>
+      <Button size="small" onClick={() => document.execCommand('underline')}><u>U</u></Button>
+      <Button size="small" onClick={() => document.execCommand('formatBlock', false, 'h3')}>H3</Button>
+      <Button size="small" onClick={() => document.execCommand('justifyLeft')}>Left</Button>
+      <Button size="small" onClick={() => document.execCommand('justifyCenter')}>Center</Button>
+      <Button size="small" onClick={() => document.execCommand('justifyRight')}>Right</Button>
+      <Button size="small" onClick={() => document.execCommand('justifyFull')}>Justify</Button>
+    </Box>
+
+    {/* Rich Text Editor */}
+    <Box
+      contentEditable
+      suppressContentEditableWarning
+      sx={{
+        border: '1px solid #ccc',
+        borderRadius: 1,
+        minHeight: 150,
+        padding: 2,
+        mb: 2,
+        whiteSpace: 'pre-wrap',
+        overflowY: 'auto'
+      }}
+      onInput={(e) =>
+        setTempPostData({ ...tempPostData, content: e.currentTarget.innerHTML })
+      }
+      dangerouslySetInnerHTML={{ __html: tempPostData.content }}
+    />
+
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setEditingPost(null)}>Cancel</Button>
+    <Button
+      onClick={handleSaveEdit}
+      variant="contained"
+      color="primary"
+      disabled={!tempPostData.title || !tempPostData.content}
+    >
+      Save Changes
+    </Button>
+  </DialogActions>
+</Dialog>
+
 
       {/* Delete Post Confirmation Dialog */}
       <Dialog
@@ -373,6 +407,7 @@ const handleDeleteAccount = async () => {
           </Button>
         </DialogActions>
       </Dialog>
+
 
       {/* Delete Account Dialog */}
       <Dialog
@@ -400,11 +435,11 @@ const handleDeleteAccount = async () => {
               <li>All comments you've made</li>
             </ul>
           </Alert>
-          
+         
           <DialogContentText sx={{ mb: 2 }}>
             To confirm deletion, please enter your password:
           </DialogContentText>
-          
+         
           <TextField
             autoFocus
             fullWidth
@@ -422,7 +457,7 @@ const handleDeleteAccount = async () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button 
+          <Button
             onClick={() => {
               setDeleteAccountConfirm(false);
               setPassword('');
@@ -438,8 +473,8 @@ const handleDeleteAccount = async () => {
             variant="contained"
             disabled={isDeletingAccount || !password}
             startIcon={
-              isDeletingAccount ? 
-                <CircularProgress size={20} color="inherit" /> : 
+              isDeletingAccount ?
+                <CircularProgress size={20} color="inherit" /> :
                 <DeleteForever />
             }
           >
@@ -447,6 +482,7 @@ const handleDeleteAccount = async () => {
           </Button>
         </DialogActions>
       </Dialog>
+
 
       {/* Snackbars for notifications */}
       <Snackbar
@@ -459,7 +495,7 @@ const handleDeleteAccount = async () => {
           {error}
         </Alert>
       </Snackbar>
-      
+     
       <Snackbar
         open={!!success}
         autoHideDuration={6000}
@@ -473,5 +509,6 @@ const handleDeleteAccount = async () => {
     </Container>
   );
 };
+
 
 export default Profile;
