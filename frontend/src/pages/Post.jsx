@@ -20,7 +20,7 @@ import {
 import { format } from 'date-fns';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-
+import DOMPurify from 'dompurify';
 
 
 const Post = () => {
@@ -293,9 +293,19 @@ useEffect(() => {
         
         <Divider sx={{ my: 2 }} />
         
-        <Typography variant="body1" paragraph>
-          {post.content || 'No content available'}
-        </Typography>
+        <Box 
+  sx={{ 
+    '& img': { maxWidth: '100%', height: 'auto' }, // Ensure images are responsive
+    '& pre': { 
+      backgroundColor: '#f5f5f5', 
+      padding: '1rem', 
+      borderRadius: '4px',
+      overflowX: 'auto'
+    },
+    '& a': { color: '#1976d2', textDecoration: 'underline' }
+  }}
+  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} 
+/>
       </Paper>
 
       {/* Comments Section */}

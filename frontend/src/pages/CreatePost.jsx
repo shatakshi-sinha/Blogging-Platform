@@ -22,6 +22,11 @@ import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
 import FormatClearIcon from '@mui/icons-material/FormatClear';
 import api from '../services/api';
+import FormatAlignLeftIcon from '@mui/icons-material/FormatAlignLeft';
+import FormatAlignCenterIcon from '@mui/icons-material/FormatAlignCenter';
+import FormatAlignRightIcon from '@mui/icons-material/FormatAlignRight';
+import FormatAlignJustifyIcon from '@mui/icons-material/FormatAlignJustify';
+import TitleIcon from '@mui/icons-material/Title';
 
 
 const CreatePost = () => {
@@ -64,11 +69,11 @@ const CreatePost = () => {
   }, [title, slug]);
 
 
-  const formatText = (command) => {
-    document.execCommand(command, false, null);
+  const formatText = (command, value = null) => {
+    document.execCommand(command, false, value);
   };
-
-
+  
+  
   const handleSubmit = async (e, isDraft = false) => {
     e.preventDefault();
 
@@ -165,11 +170,18 @@ const CreatePost = () => {
 
 
           <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-            <IconButton onClick={() => formatText('bold')}><FormatBoldIcon /></IconButton>
-            <IconButton onClick={() => formatText('italic')}><FormatItalicIcon /></IconButton>
-            <IconButton onClick={() => formatText('underline')}><FormatUnderlinedIcon /></IconButton>
-            <IconButton onClick={() => formatText('removeFormat')}><FormatClearIcon /></IconButton>
-          </Stack>
+  <IconButton onClick={() => formatText('bold')}><FormatBoldIcon /></IconButton>
+  <IconButton onClick={() => formatText('italic')}><FormatItalicIcon /></IconButton>
+  <IconButton onClick={() => formatText('underline')}><FormatUnderlinedIcon /></IconButton>
+  <IconButton onClick={() => formatText('formatBlock', '<h1>')}><TitleIcon /></IconButton>
+  <IconButton onClick={() => formatText('justifyLeft')}><FormatAlignLeftIcon /></IconButton>
+  <IconButton onClick={() => formatText('justifyCenter')}><FormatAlignCenterIcon /></IconButton>
+  <IconButton onClick={() => formatText('justifyRight')}><FormatAlignRightIcon /></IconButton>
+  <IconButton onClick={() => formatText('justifyFull')}><FormatAlignJustifyIcon /></IconButton>
+  <IconButton onClick={() => formatText('removeFormat')}><FormatClearIcon /></IconButton>
+</Stack>
+
+
 
 
           <Box
