@@ -10,4 +10,6 @@ router.post('/login', authController.login);
 // Protected routes
 router.get('/me', authMiddleware, authController.getMe);
 router.get('/check', authMiddleware, authController.checkAuth);
+router.delete('/delete', authMiddleware, authController.deleteUser);
+
 module.exports = router;

@@ -29,7 +29,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { formatPostDateTime } from '../utils/dateUtils';
-
+import { deleteAccount } from '../services/auth';
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -45,14 +45,14 @@ const Profile = () => {
   const [tempPostData, setTempPostData] = useState({ title: '', content: '' });
   const [deleteAccountConfirm, setDeleteAccountConfirm] = useState(false);
   const [password, setPassword] = useState('');
-
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
-
 
     const fetchProfile = async () => {
       try {
@@ -61,7 +61,7 @@ const Profile = () => {
           api.get('/auth/me'),
           api.get('/posts/user/me')
         ]);
-       
+        
         setProfile(profileRes.data);
         setPosts(postsRes.data);
       } catch (err) {
@@ -71,21 +71,18 @@ const Profile = () => {
       }
     };
 
-
     fetchProfile();
   }, [user, navigate]);
-
 
   const handleEditClick = (post) => {
     setEditingPost(post);
     setTempPostData({ title: post.title, content: post.content });
   };
 
-
   const handleSaveEdit = async () => {
     try {
       await api.put(`/posts/${editingPost.postID}`, tempPostData);
-      setPosts(posts.map(p =>
+      setPosts(posts.map(p => 
         p.postID === editingPost.postID ? { ...p, ...tempPostData } : p
       ));
       setEditingPost(null);
@@ -94,7 +91,6 @@ const Profile = () => {
       setError(err.response?.data?.message || 'Failed to update post');
     }
   };
-
 
   const handleDeletePost = async (postId) => {
     try {
@@ -107,35 +103,37 @@ const Profile = () => {
     }
   };
 
-
   const handleLogout = () => {
     logout();
     navigate('/');
-  };
+    window.location.reload(); // This forces a page reload after logout
+  }; 
+
+// In your handleDeleteAccount function:
+const handleDeleteAccount = async () => {
+  try {
+    await deleteAccount(password);
+    setSuccess('Account deleted successfully. Redirecting...');
+    setTimeout(() => {
+      navigate('/');  // Redirect to the home page
+      window.location.reload();  // Force a page reload after account deletion
+    }, 2000);
+  } catch (err) {
+    if (err.message.includes('Incorrect password')) {
+      setPasswordError(err.message);
+    } else {
+      setError(err.message);
+    }
+  } finally {
+    setIsDeletingAccount(false);
+  }
+};
 
 
   const handleCloseSnackbar = () => {
     setError('');
     setSuccess('');
   };
-
-
-  const handleDeleteAccount = async () => {
-    try {
-      await api.delete('/auth/me', { data: { password } });
-      setSuccess('Account deleted successfully. Redirecting...');
-      setTimeout(() => {
-        logout();
-        navigate('/');
-      }, 2000);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete account');
-    } finally {
-      setDeleteAccountConfirm(false);
-      setPassword('');
-    }
-  };
-
 
   if (loading) {
     return (
@@ -144,7 +142,6 @@ const Profile = () => {
       </Container>
     );
   }
-
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -176,26 +173,34 @@ const Profile = () => {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-  <Button
-    variant="outlined"
-    color="error"
-    onClick={handleLogout}
-    startIcon={<Logout />}
-  >
-    Logout
-  </Button>
-  <Button
-    variant="outlined"
-    color="error"
-    onClick={() => setDeleteAccountConfirm(true)}
-    startIcon={<DeleteForever />}
-  >
-    Delete Account
-  </Button>
-</Box>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={handleLogout}
+              startIcon={<Logout />}
+            >
+              Logout
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => setDeleteAccountConfirm(true)}
+              startIcon={<DeleteForever />}
+              sx={{
+                mt: 1,
+                borderColor: 'error.main',
+                '&:hover': {
+                  backgroundColor: 'error.light',
+                  color: 'error.contrastText'
+                }
+              }}
+            >
+              Delete Account
+            </Button>
+          </Box>
         </Box>
       </Paper>
-     
+      
       <Tabs
         value={tabValue}
         onChange={(e, newValue) => setTabValue(newValue)}
@@ -205,13 +210,13 @@ const Profile = () => {
         <Tab label="My Posts" icon={<Edit />} />
         <Tab label="Account Settings" icon={<Settings />} />
       </Tabs>
-     
+      
       {tabValue === 0 && (
         <Box>
           <Typography variant="h5" component="h2" gutterBottom>
             My Posts ({posts.length})
           </Typography>
-         
+          
           {posts.length > 0 ? (
             <List sx={{ bgcolor: 'background.paper' }}>
               {posts.map(post => (
@@ -233,22 +238,22 @@ const Profile = () => {
                             {formatPostDateTime(post)}
                           </Typography>
                           <br />
-                          {post.content.length > 100
-                            ? `${post.content.substring(0, 100)}...`
+                          {post.content.length > 100 
+                            ? `${post.content.substring(0, 100)}...` 
                             : post.content}
                         </>
                       }
                       sx={{ mr: 2 }}
                     />
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton
+                      <IconButton 
                         onClick={() => handleEditClick(post)}
                         color="primary"
                         aria-label="edit post"
                       >
                         <Edit />
                       </IconButton>
-                      <IconButton
+                      <IconButton 
                         onClick={() => setDeleteConfirm(post.postID)}
                         color="error"
                         aria-label="delete post"
@@ -278,7 +283,7 @@ const Profile = () => {
           )}
         </Box>
       )}
-     
+      
       {tabValue === 1 && (
         <Paper sx={{ p: 3 }}>
           <Typography variant="h5" component="h2" gutterBottom>
@@ -291,9 +296,8 @@ const Profile = () => {
             <Typography component="dd" variant="body1" sx={{ mb: 2 }}>
               {profile?.email}
             </Typography>
-           
           </Box>
-         
+          
           <Button
             variant="contained"
             color="primary"
@@ -303,7 +307,6 @@ const Profile = () => {
           </Button>
         </Paper>
       )}
-
 
       {/* Edit Dialog */}
       <Dialog
@@ -347,8 +350,7 @@ const Profile = () => {
         </DialogActions>
       </Dialog>
 
-
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Post Confirmation Dialog */}
       <Dialog
         open={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
@@ -372,6 +374,79 @@ const Profile = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Delete Account Dialog */}
+      <Dialog
+        open={deleteAccountConfirm}
+        onClose={() => {
+          setDeleteAccountConfirm(false);
+          setPassword('');
+          setPasswordError('');
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: 'error.main' }}>
+          <Box display="flex" alignItems="center">
+            <DeleteForever sx={{ mr: 1 }} />
+            Confirm Account Deletion
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <strong>Warning:</strong> This will permanently delete all your data including:
+            <ul>
+              <li>Your profile information</li>
+              <li>All posts you've created</li>
+              <li>All comments you've made</li>
+            </ul>
+          </Alert>
+          
+          <DialogContentText sx={{ mb: 2 }}>
+            To confirm deletion, please enter your password:
+          </DialogContentText>
+          
+          <TextField
+            autoFocus
+            fullWidth
+            margin="dense"
+            label="Password"
+            type="password"
+            variant="outlined"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setPasswordError('');
+            }}
+            error={!!passwordError}
+            helperText={passwordError}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => {
+              setDeleteAccountConfirm(false);
+              setPassword('');
+              setPasswordError('');
+            }}
+            disabled={isDeletingAccount}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteAccount}
+            color="error"
+            variant="contained"
+            disabled={isDeletingAccount || !password}
+            startIcon={
+              isDeletingAccount ? 
+                <CircularProgress size={20} color="inherit" /> : 
+                <DeleteForever />
+            }
+          >
+            {isDeletingAccount ? 'Deleting...' : 'Delete Permanently'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Snackbars for notifications */}
       <Snackbar
@@ -384,7 +459,7 @@ const Profile = () => {
           {error}
         </Alert>
       </Snackbar>
-     
+      
       <Snackbar
         open={!!success}
         autoHideDuration={6000}
@@ -395,64 +470,8 @@ const Profile = () => {
           {success}
         </Alert>
       </Snackbar>
-
-
-      {/* Delete Account Dialog */}
-<Dialog
-  open={deleteAccountConfirm}
-  onClose={() => {
-    setDeleteAccountConfirm(false);
-    setPassword('');
-  }}
-  maxWidth="sm"
-  fullWidth
->
-  <DialogTitle>Delete Your Account</DialogTitle>
-  <DialogContent>
-    <DialogContentText sx={{ mb: 2 }}>
-      This action cannot be undone. This will permanently delete your account and all associated data.
-    </DialogContentText>
-    <DialogContentText sx={{ mb: 2, fontWeight: 'bold' }}>
-      To confirm, please enter your password:
-    </DialogContentText>
-    <TextField
-      autoFocus
-      margin="dense"
-      label="Password"
-      type="password"
-      fullWidth
-      variant="outlined"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-    />
-  </DialogContent>
-  <DialogActions>
-    <Button
-      onClick={() => {
-        setDeleteAccountConfirm(false);
-        setPassword('');
-      }}
-    >
-      Cancel
-    </Button>
-    <Button
-      onClick={handleDeleteAccount}
-      color="error"
-      variant="contained"
-      disabled={!password}
-      startIcon={<DeleteForever />}
-    >
-      Delete Account Permanently
-    </Button>
-  </DialogActions>
-</Dialog>
     </Container>
   );
 };
 
-
 export default Profile;
-
-
-
-

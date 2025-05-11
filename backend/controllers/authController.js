@@ -141,3 +141,22 @@ exports.checkAuth = async (req, res) => {
       res.json({ isAuthenticated: false });
     }
   };
+
+  exports.deleteUser = async (req, res) => {
+    try {
+      const [result] = await db.execute(
+        'DELETE FROM user WHERE userID = ?',
+        [req.user.id]
+      );
+  
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'User not found or already deleted' });
+      }
+  
+      res.status(200).json({ message: 'User account deleted successfully' });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Server error during deletion' });
+    }
+  };
+  
