@@ -17,33 +17,6 @@ exports.getPublicProfile = async (req, res) => {
   }
 };
 
-exports.updateProfileInfo = async (req, res) => {
-  try {
-    const { name, intro, profile } = req.body;
-    const userId = req.user.id;
-
-    // Validate required fields
-    if (!name) {
-      return res.status(400).json({ message: "Name is required" });
-    }
-
-    await db.execute(
-      `UPDATE user
-         SET name = ?, intro = ?, profile = ?
-         WHERE userID = ?`,
-      [name, intro || null, profile || null, userId]
-    );
-
-    res.json({
-      success: true,
-      message: "Profile updated successfully",
-      user: { name, intro, profile },
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Failed to update profile" });
-  }
-};
-
 exports.getUserAccount = async (req, res) => {
   try {
     const [user] = await db.execute(
@@ -137,21 +110,15 @@ exports.updateProfile = async (req, res) => {
       user: updatedUser[0]
     });
   } catch (err) {
-    console.error("Update profile error:", err);
-    res.status(500).json({ message: "Failed to update profile" });
-  }
+    console.error("Update profile error:", err.message);  // ✅ Add this line
+    res.status(500).json({ message: "Failed to update profile", error: err.message });
+  }  
 };
-
-
-
 
 exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     const userId = req.user.id;
-
-
-
 
     // 1. Get current password hash
     const [user] = await db.execute(
@@ -159,39 +126,28 @@ exports.changePassword = async (req, res) => {
       [userId]
     );
 
-
-
-
     if (!user.length) {
       return res.status(404).json({ message: "User not found" });
     }
 
-
-
-
     // 2. Verify current password (MD5)
-    const currentMD5 = crypto.createHash('md5').update(currentPassword).digest('hex');
-    if (currentMD5 !== user[0].password) {
-      return res.status(401).json({ message: "Current password is incorrect" });
-    }
+    const bcrypt = require('bcrypt');
+// During comparison
+const match = await bcrypt.compare(currentPassword, user[0].password);
+if (!match) return res.status(401).json({ message: "Current password is incorrect" });
 
-
-
-
-    // 3. Hash new password (MD5)
-    const newMD5 = crypto.createHash('md5').update(newPassword).digest('hex');
-
-
-
+// During update
+const hashedPassword = await bcrypt.hash(newPassword, 10);
+await db.execute(
+  `UPDATE user SET password = ? WHERE userID = ?`,
+  [hashedPassword, userId]
+);
 
     // 4. Update password
     await db.execute(
       `UPDATE user SET password = ? WHERE userID = ?`,
-      [newMD5, userId]
+      [hashedPassword, userId]
     );
-
-
-
 
     res.json({
       success: true,

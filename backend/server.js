@@ -8,6 +8,7 @@ const postRoutes = require('./routes/postRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const reactionRoutes = require('./routes/reactionRoutes');
+const userRoutes = require('./routes/userRoutes');
 const app = express();
 
 // Middleware
@@ -20,6 +21,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/reactions', reactionRoutes);
+app.use('/api/users', userRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

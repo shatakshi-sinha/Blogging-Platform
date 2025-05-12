@@ -25,7 +25,7 @@ const UpdateProfile = () => {
     name: '',
     email: '',
     intro: ''
-  });
+  });  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -44,8 +44,23 @@ const UpdateProfile = () => {
     }
   }, [user]);
 
-
-
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/auth/me'); // or '/users/account' if you expose it
+        setFormData({
+          username: res.data.username || '',
+          name: res.data.name || '',
+          email: res.data.email || '',
+          intro: res.data.intro || ''
+        });
+      } catch (err) {
+        setError('Failed to load profile');
+      }
+    };
+  
+    fetchProfile();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -56,18 +71,28 @@ const UpdateProfile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setError('');
+    setSuccess('');
+    setLoading(true); // ✅ start loading
+  
+    if (!formData.username || !formData.name || !formData.email) {
+      setError("Username, name and email are required");
+      setLoading(false); // ✅ stop loading
+      return;
+    }
+  
     try {
-      const response = await api.put('/users/profile', formData);
-      updateUser(response.data.user);
-      setSuccess('Profile updated successfully!');
-      setTimeout(() => navigate('/profile'), 1500);
+      const res = await api.put('/users/profile', formData);
+      setSuccess("Profile updated successfully!");
+      setTimeout(() => navigate('/profile'), 2000);
     } catch (err) {
+      console.error("Update failed:", err.response?.data || err.message); // ✅ DEBUG
       setError(err.response?.data?.message || 'Failed to update profile');
     } finally {
-      setLoading(false);
+      setLoading(false); // ✅ stop loading
     }
   };
+  
 
 
 
@@ -83,56 +108,39 @@ const UpdateProfile = () => {
 
 
         <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Username"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-          />
+          
+        <TextField
+  label="Username"
+  fullWidth
+  required
+  value={formData.username}
+  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+/>
 
+<TextField
+  label="Name"
+  fullWidth
+  required
+  value={formData.name}
+  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+/>
 
+<TextField
+  label="Email"
+  fullWidth
+  required
+  value={formData.email}
+  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+/>
 
-
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Full Name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-
-
-
-
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-
-
-
-
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Introduction"
-            name="intro"
-            value={formData.intro}
-            onChange={handleChange}
-            multiline
-            rows={4}
-          />
+<TextField
+  label="Intro"
+  fullWidth
+  multiline
+  rows={3}
+  value={formData.intro}
+  onChange={(e) => setFormData({ ...formData, intro: e.target.value })}
+/>
 
 
 

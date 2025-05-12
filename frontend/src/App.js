@@ -98,7 +98,7 @@ function App() {
               <ProtectedRoute>
                 <ChangePassword />
               </ProtectedRoute>
-            } />
+            } /> 
             <Route path="/profile/:userId" element={<PublicProfile />} />
             <Route path="/profile/edit" element={
               <ProtectedRoute>
