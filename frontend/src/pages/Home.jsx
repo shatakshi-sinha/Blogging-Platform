@@ -8,11 +8,13 @@ import {
   CircularProgress,
   InputAdornment,
   Chip,
-  Button
+  Button,
+  MenuItem
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import PostCard from '../components/PostCard';
 import api from '../services/api';
+import { fetchArchivedPosts } from '../services/api';
 
 // Color constants
 const colors = {
@@ -37,24 +39,31 @@ const Home = () => {
   const [searchFilter, setSearchFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filter, setFilter] = useState('published'); // "published" or "archived"
 
-  // Fetch posts on component mount
   useEffect(() => {
     const fetchPosts = async () => {
+      setLoading(true);
       try {
-        const response = await api.get('/posts');
-        setPosts(response.data);
-        setFilteredPosts(response.data);
+        let res;
+        if (filter === 'archived') {
+          res = await fetchArchivedPosts();
+        } else {
+          res = await api.get('/posts');
+        }
+        setPosts(res.data);
+        setFilteredPosts(res.data);
         setLoading(false);
       } catch (err) {
         setError(err.message);
         setLoading(false);
       }
     };
-    fetchPosts();
-  }, []);
 
-  // Enhanced filter function with null checks
+    fetchPosts();
+  }, [filter]);
+
+  // Enhanced search filtering
   useEffect(() => {
     const results = posts.filter(post => {
       const term = searchTerm.toLowerCase().trim();
@@ -66,7 +75,7 @@ const Home = () => {
         cat?.title?.toLowerCase().includes(term)
       );
 
-      switch(searchFilter) {
+      switch (searchFilter) {
         case 'title': return hasTitleMatch;
         case 'content': return hasContentMatch;
         case 'categories': return hasCategoryMatch;
@@ -78,12 +87,7 @@ const Home = () => {
 
   if (loading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        mt: 4,
-        minHeight: '60vh'
-      }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, minHeight: '60vh' }}>
         <CircularProgress sx={{ color: colors.brown.medium }} />
       </Box>
     );
@@ -98,88 +102,110 @@ const Home = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ 
-      py: 4,
-      minHeight: '100vh'
-    }}>
-      {/* Search Section */}
-      <Paper 
-        elevation={0}
-        sx={{ 
-          mb: 4,
-          p: 3,
-          backgroundColor: colors.beige.medium,
-          borderRadius: 2,
-          border: `1px solid ${colors.beige.dark}`
+    <Container maxWidth="lg" sx={{ py: 4, minHeight: '100vh' }}>
+      {/* Search and Filter Section */}
+      <Paper
+  elevation={0}
+  sx={{
+    mb: 4,
+    p: 3,
+    backgroundColor: colors.beige.medium,
+    borderRadius: 2,
+    border: `1px solid ${colors.beige.dark}`
+  }}
+>
+  {/* Search Bar + Dropdown Row */}
+  <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+    <TextField
+      fullWidth
+      variant="outlined"
+      placeholder="Search posts..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <SearchIcon sx={{ color: colors.brown.medium }} />
+          </InputAdornment>
+        ),
+        sx: {
+          backgroundColor: colors.white,
+          borderRadius: 1,
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: colors.brown.light,
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: colors.brown.medium,
+          }
+        }
+      }}
+    />
+
+    {/* Dropdown for Post Type Filter */}
+    <TextField
+      select
+      label="Post Type"
+      value={filter}
+      onChange={(e) => setFilter(e.target.value)}
+      sx={{
+        width: { xs: '100%', sm: '200px' },
+        backgroundColor: colors.white,
+        '& .MuiOutlinedInput-notchedOutline': {
+          borderColor: colors.brown.light,
+        },
+        '&:hover .MuiOutlinedInput-notchedOutline': {
+          borderColor: colors.brown.medium,
+        }
+      }}
+    >
+      <MenuItem value="published">Published Posts</MenuItem>
+      <MenuItem value="archived">Archived Posts</MenuItem>
+    </TextField>
+  </Box>
+
+  {/* Filter Chips */}
+  <Box sx={{
+    display: 'flex',
+    gap: 1,
+    mt: 2,
+    flexWrap: 'wrap'
+  }}>
+    {['all', 'title', 'content', 'categories'].map((filterOption) => (
+      <Chip
+        key={filterOption}
+        label={filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
+        onClick={() => setSearchFilter(filterOption)}
+        sx={{
+          backgroundColor: searchFilter === filterOption
+            ? colors.brown.dark
+            : colors.beige.medium,
+          color: searchFilter === filterOption ? colors.white : colors.brown.dark,
+          '&:hover': {
+            backgroundColor: searchFilter === filterOption
+              ? colors.brown.dark
+              : '#D7C4B7'
+          }
         }}
-      >
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Search posts..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: colors.brown.medium }} />
-              </InputAdornment>
-            ),
-            sx: {
-              backgroundColor: colors.white,
-              borderRadius: 1,
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: colors.brown.light,
-              },
-              '&:hover .MuiOutlinedInput-notchedOutline': {
-                borderColor: colors.brown.medium,
-              }
-            }
-          }}
-        />
+      />
+    ))}
+  </Box>
+</Paper>
 
-        {/* Filter Chips */}
-        <Box sx={{ 
-          display: 'flex', 
-          gap: 1, 
-          mt: 2,
-          flexWrap: 'wrap'
-        }}>
-          {['all', 'title', 'content', 'categories'].map((filter) => (
-            <Chip
-              key={filter}
-              label={filter.charAt(0).toUpperCase() + filter.slice(1)}
-              onClick={() => setSearchFilter(filter)}
-              sx={{
-                backgroundColor: searchFilter === filter 
-                  ? colors.brown.dark 
-                  : colors.beige.medium,
-                color: searchFilter === filter ? colors.white : colors.brown.dark,
-                '&:hover': {
-                  backgroundColor: searchFilter === filter 
-                    ? colors.brown.dark 
-                    : '#D7C4B7'
-                }
-              }}
-            />
-          ))}
-        </Box>
-      </Paper>
 
-      {/* Posts Grid */}
-      <Box sx={{ 
+      {/* Posts Display */}
+      <Box sx={{
         display: 'grid',
-        gridTemplateColumns: { 
-          xs: '1fr', 
-          sm: 'repeat(2, 1fr)', 
-          lg: 'repeat(3, 1fr)' 
+        gridTemplateColumns: {
+          xs: '1fr',
+          sm: 'repeat(2, 1fr)',
+          lg: 'repeat(3, 1fr)'
         },
         gap: 3
       }}>
         {filteredPosts.length > 0 ? (
           filteredPosts.map(post => (
-            <PostCard 
-              key={post.postID} 
+            <PostCard
+              key={post.postID}
               post={post}
               sx={{
                 backgroundColor: colors.white,
@@ -194,26 +220,27 @@ const Home = () => {
             />
           ))
         ) : (
-          <Paper 
-            sx={{ 
-              p: 4, 
+          <Paper
+            sx={{
+              p: 4,
               gridColumn: '1 / -1',
               backgroundColor: colors.beige.medium,
               textAlign: 'center',
               border: `1px dashed ${colors.brown.light}`
             }}
           >
-            <Typography 
-              variant="h6" 
-              sx={{ 
+            <Typography
+              variant="h6"
+              sx={{
                 color: colors.brown.dark,
                 mb: 2
               }}
             >
-              {searchTerm 
+              {searchTerm
                 ? `No posts found matching "${searchTerm}" in ${searchFilter}`
-                : 'No posts available'
-              }
+                : filter === 'archived'
+                  ? 'No archived posts available'
+                  : 'No published posts available'}
             </Typography>
             {searchTerm && (
               <Button

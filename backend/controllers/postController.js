@@ -8,9 +8,10 @@ exports.getAllPosts = async (req, res) => {
       SELECT p.*, p.description, u.username, u.name
       FROM post p
       JOIN user u ON p.userID = u.userID
-      WHERE p.status = 'published'
+      WHERE p.status = 'published' AND p.archived = false
       ORDER BY p.createdAt DESC
     `);
+    
 
 
     // Get categories for each post
@@ -451,3 +452,65 @@ exports.publishDraft = async (req, res) => {
     });
   }
 };
+exports.archivePost = async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const [result] = await db.execute(
+      `UPDATE post SET archived = true WHERE postID = ? AND userID = ?`,
+      [postId, req.user.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Post not found or unauthorized" });
+    }
+
+    res.json({ message: "Post archived successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.unarchivePost = async (req, res) => {
+  try {
+    const postId = req.params.id;
+
+    const [result] = await db.execute(
+      `UPDATE post SET archived = false WHERE postID = ? AND userID = ?`,
+      [postId, req.user.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Post not found or unauthorized" });
+    }
+
+    // Get the updated post to send in response
+    const [updatedPost] = await db.execute(
+      `SELECT * FROM post WHERE postID = ?`,
+      [postId]
+    );
+
+    res.status(200).json({ message: 'Post unarchived', post: updatedPost[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getArchivedPosts = async (req, res) => {
+  try {
+    const [posts] = await db.execute(
+      `SELECT p.*, u.username, u.name
+       FROM post p
+       JOIN user u ON p.userID = u.userID
+       WHERE p.archived = true AND p.status = 'published'
+       ORDER BY p.createdAt DESC`
+    );
+
+    res.json(posts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error fetching archived posts" });
+  }
+};
+

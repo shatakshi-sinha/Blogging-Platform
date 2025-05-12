@@ -30,7 +30,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { formatPostDateTime } from '../utils/dateUtils';
 import { deleteAccount } from '../services/auth';
-
+import { archivePost, unarchivePost } from '../services/api';
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -49,34 +49,69 @@ const Profile = () => {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const editorRef = useRef(null);
-  
+
+  // Formatting functions for the rich text editor
+  const formatText = (command, value = null) => {
+    document.execCommand(command, false, value);
+    editorRef.current.focus();
+  };
+
   const handlePublishDraft = async (postId) => {
-  try {
-    const response = await api.put(`/posts/${postId}/publish`);
-    
-    if (response.data.success) {
-      setPosts(posts.map(post => 
-        post.postID === postId ? { 
-          ...post, 
-          status: 'published',
-          publishedAt: new Date().toISOString()
-        } : post
-      ));
-      setSuccess('Draft published successfully!');
-    } else {
-      setError(response.data.message || 'Failed to publish draft');
+    try {
+      const response = await api.put(`/posts/${postId}/publish`);
+      
+      if (response.data.success) {
+        setPosts(posts.map(post => 
+          post.postID === postId ? { 
+            ...post, 
+            status: 'published',
+            publishedAt: new Date().toISOString()
+          } : post
+        ));
+        setSuccess('Draft published successfully!');
+      } else {
+        setError(response.data.message || 'Failed to publish draft');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to publish draft');
     }
-  } catch (err) {
-    setError(err.response?.data?.message || 'Failed to publish draft');
-  }
-};
+  };
+
+  const handleArchive = async (id) => {
+    try {
+      await archivePost(id);
+      setSuccess('Post archived successfully!');
+      fetchUserPosts();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to archive post');
+    }
+  };
+
+  const handleUnarchive = async (id) => {
+    try {
+      await unarchivePost(id);  // ✅ This returns nothing useful unless backend sends post
+      setSuccess('Post unarchived successfully!');
+      fetchUserPosts();         // ✅ This refreshes posts from backend
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to unarchive post');
+    }
+  };
+  
+
+  const fetchUserPosts = async () => {
+    try {
+      const response = await api.get('/posts/user/me');
+      setPosts(response.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load posts');
+    }
+  };
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
-
 
     const fetchProfile = async () => {
       try {
@@ -95,16 +130,17 @@ const Profile = () => {
       }
     };
 
-
     fetchProfile();
   }, [user, navigate]);
 
-
   const handleEditClick = (post) => {
     setEditingPost(post);
-    setTempPostData({ title: post.title, description: post.description || '', content: post.content });
+    setTempPostData({ 
+      title: post.title, 
+      description: post.description || '', 
+      content: post.content 
+    });
   };
-
 
   const handleSaveEdit = async () => {
     const updatedContent = editorRef.current?.innerHTML || tempPostData.content;
@@ -113,10 +149,9 @@ const Profile = () => {
       const response = await api.put(`/posts/${editingPost.postID}`, {
         title: tempPostData.title,
         description: tempPostData.description,
-        content: updatedContent, // Prioritizes editorRef content, falls back to tempPostData
+        content: updatedContent,
       });
   
-      // Update the posts list
       setPosts(posts.map(p =>
         p.postID === editingPost.postID ? { 
           ...p, 
@@ -133,7 +168,6 @@ const Profile = () => {
     }
   };
 
-
   const handleDeletePost = async (postId) => {
     try {
       await api.delete(`/posts/${postId}`);
@@ -145,42 +179,35 @@ const Profile = () => {
     }
   };
 
-
   const handleLogout = () => {
     logout();
     navigate('/');
-    window.location.reload(); // This forces a page reload after logout
+    window.location.reload();
   };
 
-
-// In your handleDeleteAccount function:
-const handleDeleteAccount = async () => {
-  try {
-    await deleteAccount(password);
-    setSuccess('Account deleted successfully. Redirecting...');
-    setTimeout(() => {
-      navigate('/');  // Redirect to the home page
-      window.location.reload();  // Force a page reload after account deletion
-    }, 2000);
-  } catch (err) {
-    if (err.message.includes('Incorrect password')) {
-      setPasswordError(err.message);
-    } else {
-      setError(err.message);
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteAccount(password);
+      setSuccess('Account deleted successfully. Redirecting...');
+      setTimeout(() => {
+        navigate('/');
+        window.location.reload();
+      }, 2000);
+    } catch (err) {
+      if (err.message.includes('Incorrect password')) {
+        setPasswordError(err.message);
+      } else {
+        setError(err.message);
+      }
+    } finally {
+      setIsDeletingAccount(false);
     }
-  } finally {
-    setIsDeletingAccount(false);
-  }
-};
-
-
-
+  };
 
   const handleCloseSnackbar = () => {
     setError('');
     setSuccess('');
   };
-
 
   if (loading) {
     return (
@@ -189,7 +216,6 @@ const handleDeleteAccount = async () => {
       </Container>
     );
   }
-
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -269,11 +295,10 @@ const handleDeleteAccount = async () => {
             <List sx={{ bgcolor: 'background.paper' }}>
               {posts.map(post => (
                 <React.Fragment key={post.postID}>
-                 
-                    <ListItem alignItems="flex-start">
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <ListItem alignItems="flex-start">
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <Typography variant="h6" component="span">
                             {post.title}
                           </Typography>
@@ -282,81 +307,132 @@ const handleDeleteAccount = async () => {
                               label="Draft" 
                               size="small" 
                               color="warning"
-                              sx={{ ml: 1, backgroundColor: '#FBDB93',  // Light yellow background
-                              color: '#5D4037',           // Dark brown text
-                              fontWeight: 'bold',
-                              border: '1px solid #FFD600'  // Gold border
+                              sx={{ 
+                                ml: 1, 
+                                backgroundColor: '#FBDB93',
+                                color: '#5D4037',
+                                fontWeight: 'bold',
+                                border: '1px solid #FFD600'
+                              }} 
+                            />
+                          )}
+                          {post.archived && (
+                            <Chip 
+                              label="Archived" 
+                              size="small" 
+                              sx={{ 
+                                ml: 1, 
+                                backgroundColor: '#EF9A9A',
+                                color: '#5D4037',
+                                fontWeight: 'bold',
+                                border: '1px solid #EF5350'
                               }} 
                             />
                           )}
                         </Box>
-                        }
-                        secondary={
-                          <>
-                            <Typography
-                              component="span"
-                              variant="body2"
-                              color="text.primary"
-                              display="block"
-                              sx={{ mb: 1 }}
-                            >
-                              {formatPostDateTime(post)}
-                            </Typography>
-                            <Typography
-                              component="span"
-                              variant="body2"
-                              color="text.secondary"
-                            >
-                              {post.description || "No description available"}
-                            </Typography>
-                          </>
-                        }
-                        sx={{ mr: 2 }}
-                      />
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                    {post.status === 'draft' && (
-                      <Button
-                        variant="contained"
-                        size="small"
-                        color="success"
-                        onClick={() => handlePublishDraft(post.postID)}
-                        sx={{ 
-                          alignSelf: 'center',
-                          textTransform: 'none'
-                        }}
-                      >
-                        Publish
-                      </Button>
-                    )}
+                      }
+                      secondary={
+                        <>
+                          <Typography
+                            component="span"
+                            variant="body2"
+                            color="text.primary"
+                            display="block"
+                            sx={{ mb: 1 }}
+                          >
+                            {formatPostDateTime(post)}
+                          </Typography>
+                          <Typography
+                            component="span"
+                            variant="body2"
+                            color="text.secondary"
+                          >
+                            {post.description || "No description available"}
+                          </Typography>
+                        </>
+                      }
+                      sx={{ mr: 2 }}
+                    />
                     <Box sx={{ display: 'flex', gap: 1 }}>
-  {/* Publish Button (if you added it) */}
-  <IconButton 
-    onClick={() => handleEditClick(post)}
-    sx={{ 
-      color: '#5C4033', // Classic brown color
-      '&:hover': {
-        backgroundColor: 'rgba(139, 69, 19, 0.1)' // Light brown hover
-      }
-    }}
-  >
-    <Edit />
-  </IconButton>
-  <IconButton 
-    onClick={() => setDeleteConfirm(post.postID)}
-    sx={{ 
-      color: '#d32f2f', // MUI's default error red
-      '&:hover': {
-        backgroundColor: 'rgba(211, 47, 47, 0.1)' // Light red hover
-      }
-    }}
-  >
-    <Delete />
-  </IconButton>
-</Box>
-                  </Box>
-                </ListItem>
-                <Divider component="li" />
-              </React.Fragment>
+                      {post.status === 'draft' && (
+                        <Button
+                          variant="contained"
+                          size="small"
+                          color="success"
+                          onClick={() => handlePublishDraft(post.postID)}
+                          sx={{ 
+                            alignSelf: 'center',
+                            textTransform: 'none'
+                          }}
+                        >
+                          Publish
+                        </Button>
+                      )}
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <IconButton 
+                          onClick={() => handleEditClick(post)}
+                          sx={{ 
+                            color: '#5C4033',
+                            '&:hover': {
+                              backgroundColor: 'rgba(139, 69, 19, 0.1)'
+                            }
+                          }}
+                        >
+                          <Edit />
+                        </IconButton>
+                        {post.archived ? (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleUnarchive(post.postID)}
+                            sx={{
+                              alignSelf: 'center',
+                              textTransform: 'none',
+                              color: '#5C4033',
+                              borderColor: '#5C4033',
+                              '&:hover': {
+                                backgroundColor: 'rgba(139, 69, 19, 0.1)',
+                                borderColor: '#5C4033'
+                              }
+                            }}
+                          >
+                            Unarchive
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleArchive(post.postID)}
+                            sx={{
+                              alignSelf: 'center',
+                              textTransform: 'none',
+                              color: '#5C4033',
+                              borderColor: '#5C4033',
+                              '&:hover': {
+                                backgroundColor: 'rgba(139, 69, 19, 0.1)',
+                                borderColor: '#5C4033'
+                              }
+                            }}
+                          >
+                            Archive
+                          </Button>
+                        )}
+                        <IconButton 
+                          onClick={() => setDeleteConfirm(post.postID)}
+                          sx={{ 
+                            color: '#d32f2f',
+                            '&:hover': {
+                              backgroundColor: 'rgba(211, 47, 47, 0.1)'
+                            }
+                          }}
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  </ListItem>
+                  <Divider component="li" />
+                </React.Fragment>
               ))}
             </List>
           ) : (
@@ -401,163 +477,197 @@ const handleDeleteAccount = async () => {
         </Paper>
       )}
 
+      {/* Edit Dialog with Complete Rich Text Editor */}
+      <Dialog
+        open={!!editingPost}
+        onClose={() => setEditingPost(null)}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>Edit Post</DialogTitle>
+        <DialogContent dividers>
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Title"
+            variant="outlined"
+            value={tempPostData.title}
+            onChange={(e) => setTempPostData({ ...tempPostData, title: e.target.value })}
+          />
 
-      {/* Edit Dialog with Rich Text Editor */}
-<Dialog
-  open={!!editingPost}
-  onClose={() => setEditingPost(null)}
-  fullWidth
-  maxWidth="md"
->
-  <DialogTitle>Edit Post</DialogTitle>
-  <DialogContent dividers>
-    <TextField
-      fullWidth
-      margin="normal"
-      label="Title"
-      variant="outlined"
-      value={tempPostData.title}
-      onChange={(e) => setTempPostData({ ...tempPostData, title: e.target.value })}
-    />
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Description"
+            variant="outlined"
+            multiline
+            rows={3}
+            value={tempPostData.description}
+            onChange={(e) => setTempPostData({...tempPostData, description: e.target.value})}
+          />
 
-    {/* NEW: Description Field */}
-    <TextField
-      fullWidth
-      margin="normal"
-      label="Description"
-      variant="outlined"
-      multiline
-      rows={3}
-      value={tempPostData.description}
-      onChange={(e) => setTempPostData({...tempPostData, description: e.target.value})}
-    />
+          {/* Rich Text Editor Toolbar */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            gap: 1, 
+            mb: 1, 
+            mt: 2,
+            borderBottom: '1px solid #e0e0e0',
+            paddingBottom: 1
+          }}>
+            <Button 
+              size="small" 
+              onClick={() => formatText('bold')}
+              sx={{ minWidth: 0, padding: '4px 8px' }}
+            >
+              <b>B</b>
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => formatText('italic')}
+              sx={{ minWidth: 0, padding: '4px 8px' }}
+            >
+              <i>I</i>
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => formatText('underline')}
+              sx={{ minWidth: 0, padding: '4px 8px' }}
+            >
+              <u>U</u>
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => formatText('strikeThrough')}
+              sx={{ minWidth: 0, padding: '4px 8px' }}
+            >
+              <s>S</s>
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => formatText('insertOrderedList')}
+              sx={{ minWidth: 0, padding: '4px 8px' }}
+            >
+              OL
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => formatText('insertUnorderedList')}
+              sx={{ minWidth: 0, padding: '4px 8px' }}
+            >
+              UL
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => formatText('justifyLeft')}
+              sx={{ minWidth: 0, padding: '4px 8px' }}
+            >
+              Left
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => formatText('justifyCenter')}
+              sx={{ minWidth: 0, padding: '4px 8px' }}
+            >
+              Center
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => formatText('justifyRight')}
+              sx={{ minWidth: 0, padding: '4px 8px' }}
+            >
+              Right
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => formatText('formatBlock', '<h2>')}
+              sx={{ minWidth: 0, padding: '4px 8px' }}
+            >
+              H2
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => formatText('formatBlock', '<h3>')}
+              sx={{ minWidth: 0, padding: '4px 8px' }}
+            >
+              H3
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => formatText('formatBlock', '<p>')}
+              sx={{ minWidth: 0, padding: '4px 8px' }}
+            >
+              P
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => formatText('createLink', prompt('Enter URL:'))}
+              sx={{ minWidth: 0, padding: '4px 8px' }}
+            >
+              Link
+            </Button>
+          </Box>
 
-
-    {/* Custom Toolbar */}
-    <Box sx={{ display: 'flex', gap: 1, mb: 1, mt: 1 }}>
-      <Button size="small" onClick={() => document.execCommand('bold')}><b>B</b></Button>
-      <Button size="small" onClick={() => document.execCommand('italic')}><i>I</i></Button>
-      <Button size="small" onClick={() => document.execCommand('underline')}><u>U</u></Button>
-    {/*<Button size="small" onClick={() => document.execCommand('formatBlock', false, 'h3')}>H3</Button>*/}
-      <Button size="small" onClick={() => document.execCommand('justifyLeft')}>Left</Button>
-      <Button size="small" onClick={() => document.execCommand('justifyCenter')}>Center</Button>
-      <Button size="small" onClick={() => document.execCommand('justifyRight')}>Right</Button>
-      <Button size="small" onClick={() => document.execCommand('justifyFull')}>Justify</Button>
-    </Box>
-
-  {/* Rich Text Editor */}
-<Box sx={{ 
-  position: 'relative',
-  marginTop: 2, 
-  marginBottom: 1
-}}>
-  {/* The actual content editable div */}
-  <Box
-    contentEditable
-    suppressContentEditableWarning
-    ref={editorRef}
-    sx={{
-      border: '1px solid rgba(0, 0, 0, 0.23)',
-      borderRadius: 1,
-      minHeight: 200,
-      padding: 2,
-      mb: 2,
-      whiteSpace: 'pre-wrap',
-      overflowY: 'auto',
-      '&:hover': {
-        borderColor: 'text.primary',
-      },
-      '&:focus-within': {
-        borderColor: 'primary.main',
-        borderWidth: '2px',
-      },
-    }}
-    onInput={(e) => {
-      // Save selection before state update
-      const selection = window.getSelection();
-      const range = selection.getRangeAt(0);
-      const preSelectionRange = range.cloneRange();
-      preSelectionRange.selectNodeContents(e.currentTarget);
-      preSelectionRange.setEnd(range.startContainer, range.startOffset);
-      const start = preSelectionRange.toString().length;
-
-      setTempPostData({ 
-        ...tempPostData, 
-        content: e.currentTarget.innerHTML 
-      });
-
-      // Restore selection after state update
-      requestAnimationFrame(() => {
-        const newRange = document.createRange();
-        let charCount = 0;
-        const nodeStack = [editorRef.current];
-        let node;
-        let foundStart = false;
-        
-        while (nodeStack.length && !foundStart) {
-          node = nodeStack.pop();
-          if (node.nodeType === Node.TEXT_NODE) {
-            const nextCharCount = charCount + node.length;
-            if (!foundStart && start >= charCount && start <= nextCharCount) {
-              newRange.setStart(node, start - charCount);
-              foundStart = true;
-            }
-            charCount = nextCharCount;
-          } else {
-            for (let i = node.childNodes.length - 1; i >= 0; i--) {
-              nodeStack.push(node.childNodes[i]);
-            }
-          }
-        }
-
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-      });
-    }}
-    onFocus={() => {
-      if (!editorRef.current.innerHTML && !tempPostData.content) {
-        editorRef.current.innerHTML = '';
-      }
-    }}
-    dangerouslySetInnerHTML={
-      editingPost ? { __html: tempPostData.content } : undefined
-    }
-  />
-  
-  {/* The floating label */}
-  <Typography
-    component="span"
-    sx={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      transform: 'translate(14px, -50%) scale(0.75)',
-      backgroundColor: 'background.paper',
-      padding: '0 4px',
-      color: 'text.secondary',
-      pointerEvents: 'none',
-      transition: 'transform 200ms cubic-bezier(0.0, 0, 0.2, 1) 0ms',
-    }}
-  >
-    Content
-  </Typography>
-</Box>
-
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={() => setEditingPost(null)}>Cancel</Button>
-    <Button
-      onClick={handleSaveEdit}
-      variant="contained"
-      //color="primary"
-      //disabled={!tempPostData.title || !tempPostData.content}
-      sx={{ bgcolor: '#5D4037', '&:hover': { bgcolor: '#3E2723' } }} 
-    >
-      Save Changes
-    </Button>
-  </DialogActions>
-</Dialog>
-
+          {/* Rich Text Editor Content */}
+          <Box sx={{ 
+            position: 'relative',
+            marginTop: 1,
+            marginBottom: 2
+          }}>
+            <Box
+              contentEditable
+              suppressContentEditableWarning
+              ref={editorRef}
+              sx={{
+                border: '1px solid rgba(0, 0, 0, 0.23)',
+                borderRadius: 1,
+                minHeight: 300,
+                padding: 2,
+                mb: 2,
+                whiteSpace: 'pre-wrap',
+                overflowY: 'auto',
+                '&:hover': {
+                  borderColor: 'text.primary',
+                },
+                '&:focus-within': {
+                  borderColor: 'primary.main',
+                  borderWidth: '2px',
+                },
+              }}
+              dangerouslySetInnerHTML={
+                editingPost ? { __html: tempPostData.content } : undefined
+              }
+            />
+            <Typography
+              component="span"
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                transform: 'translate(14px, -50%) scale(0.75)',
+                backgroundColor: 'background.paper',
+                padding: '0 4px',
+                color: 'text.secondary',
+                pointerEvents: 'none',
+                transition: 'transform 200ms cubic-bezier(0.0, 0, 0.2, 1) 0ms',
+              }}
+            >
+              Content
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditingPost(null)}>Cancel</Button>
+          <Button
+            onClick={handleSaveEdit}
+            variant="contained"
+            sx={{ bgcolor: '#5D4037', '&:hover': { bgcolor: '#3E2723' } }} 
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Delete Post Confirmation Dialog */}
       <Dialog
@@ -582,7 +692,6 @@ const handleDeleteAccount = async () => {
           </Button>
         </DialogActions>
       </Dialog>
-
 
       {/* Delete Account Dialog */}
       <Dialog
@@ -658,7 +767,6 @@ const handleDeleteAccount = async () => {
         </DialogActions>
       </Dialog>
 
-
       {/* Snackbars for notifications */}
       <Snackbar
         open={!!error}
@@ -684,6 +792,5 @@ const handleDeleteAccount = async () => {
     </Container>
   );
 };
-
 
 export default Profile;
