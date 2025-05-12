@@ -12,6 +12,8 @@ import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicProfile from './pages/PublicProfile';
 import WelcomePage from './components/WelcomePage';
+import UpdateProfile from './pages/UpdateProfile';
+import ChangePassword from './pages/ChangePassword';
 
 /*const theme = createTheme({
   palette: {
@@ -85,6 +87,16 @@ function App() {
             <Route path="/create-post" element={
               <ProtectedRoute>
                 <CreatePost />
+              </ProtectedRoute>
+            } />
+            <Route path="/update-profile" element={
+              <ProtectedRoute>
+                <UpdateProfile />
+              </ProtectedRoute>
+            } />
+            <Route path="/change-password" element={
+              <ProtectedRoute>
+                <ChangePassword />
               </ProtectedRoute>
             } />
             <Route path="/profile/:userId" element={<PublicProfile />} />

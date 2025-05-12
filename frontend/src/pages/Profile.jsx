@@ -254,23 +254,7 @@ const Profile = () => {
               startIcon={<Logout />}
             >
               Logout
-            </Button>
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={() => setDeleteAccountConfirm(true)}
-              startIcon={<DeleteForever />}
-              sx={{
-                mt: 1,
-                borderColor: 'error.main',
-                '&:hover': {
-                  backgroundColor: 'error.light',
-                  color: 'error.contrastText'
-                }
-              }}
-            >
-              Delete Account
-            </Button>
+            </Button> 
           </Box>
         </Box>
       </Paper>
@@ -453,29 +437,72 @@ const Profile = () => {
         </Box>
       )}
      
-      {tabValue === 1 && (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h5" component="h2" gutterBottom>
-            Account Settings
-          </Typography>
-          <Box component="dl" sx={{ mb: 3 }}>
-            <Typography component="dt" variant="subtitle2" color="text.secondary">
-              Email
-            </Typography>
-            <Typography component="dd" variant="body1" sx={{ mb: 2 }}>
-              {profile?.email}
-            </Typography>
-          </Box>
-         
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => navigate('/update-profile')}
-          >
-            Update Profile
-          </Button>
-        </Paper>
-      )}
+     {tabValue === 1 && (
+  <Paper sx={{ p: 3 }}>
+    <Typography variant="h5" component="h2" gutterBottom>
+      Account Information
+    </Typography>
+   
+    <Box sx={{ mb: 3 }}>
+      <Typography variant="subtitle2" color="text.secondary">
+        Username
+      </Typography>
+      <Typography variant="body1" sx={{ mb: 2 }}>
+        @{profile?.username}
+      </Typography>
+     
+      <Typography variant="subtitle2" color="text.secondary">
+        Name
+      </Typography>
+      <Typography variant="body1" sx={{ mb: 2 }}>
+        {profile?.name}
+      </Typography>
+     
+      <Typography variant="subtitle2" color="text.secondary">
+        Email
+      </Typography>
+      <Typography variant="body1" sx={{ mb: 2 }}>
+        {profile?.email}
+      </Typography>
+     
+      <Typography variant="subtitle2" color="text.secondary">
+        Introduction
+      </Typography>
+      <Typography variant="body1" sx={{ mb: 2, whiteSpace: 'pre-line' }}>
+        {profile?.intro || 'No introduction yet.'}
+      </Typography>
+    </Box>
+
+
+    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => navigate('/update-profile')}
+        startIcon={<Edit />}
+      >
+        Edit Profile
+      </Button>
+     
+      <Button
+        variant="outlined"
+        color="primary"
+        onClick={() => navigate('/change-password')}
+      >
+        Change Password
+      </Button>    
+      <Button
+        variant="outlined"
+        color="error"
+        onClick={() => setDeleteAccountConfirm(true)}
+        startIcon={<DeleteForever />}
+        sx={{ ml: 'auto' }}
+      >
+        Delete Account
+      </Button>
+    </Box>
+  </Paper>
+)}
 
       {/* Edit Dialog with Complete Rich Text Editor */}
       <Dialog

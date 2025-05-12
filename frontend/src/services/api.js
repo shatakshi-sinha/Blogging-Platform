@@ -40,9 +40,14 @@ api.interceptors.response.use(
 export const getPostReactions = (postId) => api.get(`/reactions/${postId}`);
 export const reactToPost = (data) => api.post('/reactions', data);
 export const updateComment = (commentId, data) => api.put(`/comments/${commentId}`, data);
+export const updateProfile = (data) => api.put('/users/profile', data);
+export const changePassword = (data) => api.put('/users/change-password', data);
 export const archivePost = (id) => api.put(`/posts/archive/${id}`);
 export const unarchivePost = (id) => api.put(`/posts/unarchive/${id}`);
 export const fetchArchivedPosts = () => api.get('/posts/archived');
 
-
 export default api;
+
+
+
+
