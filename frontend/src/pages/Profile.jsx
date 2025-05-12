@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Container,
   Typography,
@@ -48,6 +48,7 @@ const Profile = () => {
   const [password, setPassword] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const editorRef = useRef(null);
   
   const handlePublishDraft = async (postId) => {
   try {
@@ -106,26 +107,31 @@ const Profile = () => {
 
 
   const handleSaveEdit = async () => {
-  try {
-    const response = await api.put(`/posts/${editingPost.postID}`, {
-      title: tempPostData.title,
-      description: tempPostData.description, 
-      content: tempPostData.content,
-    });
+    const updatedContent = editorRef.current?.innerHTML || tempPostData.content;
     
-    // Update the posts list with the returned post data
-    setPosts(posts.map(p =>
-      p.postID === editingPost.postID ? { ...p, title: tempPostData.title,
-        description: tempPostData.description, // Add this
-        content: tempPostData.content } : p
-    ));
-    
-    setEditingPost(null);
-    setSuccess('Post updated successfully!');
-  } catch (err) {
-    setError(err.response?.data?.message || 'Failed to update post');
-  }
-};
+    try {
+      const response = await api.put(`/posts/${editingPost.postID}`, {
+        title: tempPostData.title,
+        description: tempPostData.description,
+        content: updatedContent, // Prioritizes editorRef content, falls back to tempPostData
+      });
+  
+      // Update the posts list
+      setPosts(posts.map(p =>
+        p.postID === editingPost.postID ? { 
+          ...p, 
+          title: tempPostData.title,
+          description: tempPostData.description,
+          content: updatedContent,
+        } : p
+      ));
+  
+      setEditingPost(null);
+      setSuccess('Post updated successfully!');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update post');
+    }
+  };
 
 
   const handleDeletePost = async (postId) => {
@@ -439,8 +445,8 @@ const handleDeleteAccount = async () => {
       <Button size="small" onClick={() => document.execCommand('justifyFull')}>Justify</Button>
     </Box>
 
-    {/* Rich Text Editor */}
-    <Box sx={{ 
+  {/* Rich Text Editor */}
+<Box sx={{ 
   position: 'relative',
   marginTop: 2, 
   marginBottom: 1
@@ -449,21 +455,73 @@ const handleDeleteAccount = async () => {
   <Box
     contentEditable
     suppressContentEditableWarning
+    ref={editorRef}
     sx={{
       border: '1px solid rgba(0, 0, 0, 0.23)',
-      borderRadius: '4px',
-      minHeight: '200px',
-      padding: '16.5px 14px',
+      borderRadius: 1,
+      minHeight: 200,
+      padding: 2,
+      mb: 2,
+      whiteSpace: 'pre-wrap',
+      overflowY: 'auto',
       '&:hover': {
-        borderColor: 'text.primary'
+        borderColor: 'text.primary',
       },
       '&:focus-within': {
         borderColor: 'primary.main',
-        borderWidth: '2px'
+        borderWidth: '2px',
+      },
+    }}
+    onInput={(e) => {
+      // Save selection before state update
+      const selection = window.getSelection();
+      const range = selection.getRangeAt(0);
+      const preSelectionRange = range.cloneRange();
+      preSelectionRange.selectNodeContents(e.currentTarget);
+      preSelectionRange.setEnd(range.startContainer, range.startOffset);
+      const start = preSelectionRange.toString().length;
+
+      setTempPostData({ 
+        ...tempPostData, 
+        content: e.currentTarget.innerHTML 
+      });
+
+      // Restore selection after state update
+      requestAnimationFrame(() => {
+        const newRange = document.createRange();
+        let charCount = 0;
+        const nodeStack = [editorRef.current];
+        let node;
+        let foundStart = false;
+        
+        while (nodeStack.length && !foundStart) {
+          node = nodeStack.pop();
+          if (node.nodeType === Node.TEXT_NODE) {
+            const nextCharCount = charCount + node.length;
+            if (!foundStart && start >= charCount && start <= nextCharCount) {
+              newRange.setStart(node, start - charCount);
+              foundStart = true;
+            }
+            charCount = nextCharCount;
+          } else {
+            for (let i = node.childNodes.length - 1; i >= 0; i--) {
+              nodeStack.push(node.childNodes[i]);
+            }
+          }
+        }
+
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      });
+    }}
+    onFocus={() => {
+      if (!editorRef.current.innerHTML && !tempPostData.content) {
+        editorRef.current.innerHTML = '';
       }
     }}
-    onInput={(e) => setTempPostData({...tempPostData, content: e.currentTarget.innerHTML})}
-    dangerouslySetInnerHTML={{ __html: tempPostData.content }}
+    dangerouslySetInnerHTML={
+      editingPost ? { __html: tempPostData.content } : undefined
+    }
   />
   
   {/* The floating label */}
