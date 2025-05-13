@@ -11,7 +11,6 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   const logout = useCallback(() => {
-    // Clear both storage locations
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
@@ -46,7 +45,6 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await api.post('/auth/login', credentials);
       
-      // Store token either in localStorage (remember) or sessionStorage (temporary)
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem('token', data.token);
       
@@ -68,7 +66,6 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check both storage locations
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         if (token) {
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;

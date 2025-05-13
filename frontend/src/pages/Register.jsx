@@ -40,7 +40,7 @@ const Register = () => {
     setErrors(prev => ({
       ...prev,
       [name]: false,
-      existingUser: false // Clear existing user error when typing
+      existingUser: false 
     }));
   };
 
@@ -53,7 +53,7 @@ const Register = () => {
       existingUser: false
     };
     setErrors(newErrors);
-    return !Object.values(newErrors).slice(0, 4).some(Boolean); // Don't include existingUser in validation
+    return !Object.values(newErrors).slice(0, 4).some(Boolean); 
   };
 
   const handleSubmit = async (e) => {
@@ -75,7 +75,6 @@ const Register = () => {
         setError('This email or username is already registered');
         setErrors(prev => ({ ...prev, existingUser: true }));
         
-        // Highlight the problematic fields
         if (err.response.data?.field === 'email') {
           setErrors(prev => ({ ...prev, email: true }));
         } else if (err.response.data?.field === 'username') {

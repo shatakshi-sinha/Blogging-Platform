@@ -10,25 +10,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
-import PublicProfile from './pages/PublicProfile';
 import WelcomePage from './components/WelcomePage';
 import UpdateProfile from './pages/UpdateProfile';
 import ChangePassword from './pages/ChangePassword';
-
-/*const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-  },
-});*/
-
 
 const theme = createTheme({
   palette: {
@@ -44,14 +28,13 @@ const theme = createTheme({
     },
     background: {
       default: '#FFFFFF', // White
-      //paper: '#F5F5DC' // Beige for cards
     },
     like: {
       main: '#1976D2', // Blue
       contrastText: '#FFFFFF', // White text
     },
     dislike: {
-      main: '#D32F2F', // Red (same as error)
+      main: '#D32F2F', // Red 
       contrastText: '#FFFFFF',
     }
   },
@@ -59,7 +42,7 @@ const theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundImage: 'none' // Removes default gradient
+          backgroundImage: 'none' 
         }
       }
     }
@@ -99,7 +82,6 @@ function App() {
                 <ChangePassword />
               </ProtectedRoute>
             } /> 
-            <Route path="/profile/:userId" element={<PublicProfile />} />
             <Route path="/profile/edit" element={
               <ProtectedRoute>
                 <Profile />

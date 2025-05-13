@@ -3,7 +3,6 @@ import { Card, CardContent, Typography, Button, Chip, Box } from '@mui/material'
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 
-
 const PostCard = ({ post, sx }) => {
   return (
     <Card sx={{
@@ -77,7 +76,6 @@ const PostCard = ({ post, sx }) => {
       </Box>
     </Card>
   );
-};
-
+};                                                          
 
 export default PostCard;

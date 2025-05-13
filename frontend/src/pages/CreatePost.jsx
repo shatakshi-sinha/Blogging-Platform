@@ -27,9 +27,9 @@ import FormatAlignCenterIcon from '@mui/icons-material/FormatAlignCenter';
 import FormatAlignRightIcon from '@mui/icons-material/FormatAlignRight';
 import FormatAlignJustifyIcon from '@mui/icons-material/FormatAlignJustify';
 import TitleIcon from '@mui/icons-material/Title';
-
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
+// Custom theme for the application
 const theme = createTheme({
   palette: {
     primary: {
@@ -49,8 +49,7 @@ const theme = createTheme({
   },
 });
 
-
-
+// Main component for creating a post
 const CreatePost = () => {
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
@@ -66,6 +65,7 @@ const CreatePost = () => {
   const [isDraft, setIsDraft] = useState(false); 
   const [contentFocused, setContentFocused] = useState(false);
 
+  // Fetch categories from the API when the component mounts
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -75,16 +75,10 @@ const CreatePost = () => {
         setError('Failed to load categories');
       }
     };
-
-
-
-
     fetchCategories();
   }, []);
 
-
-
-
+  // Generate slug from title when title changes
   useEffect(() => {
     if (title && !slug) {
       const generatedSlug = title
@@ -96,14 +90,12 @@ const CreatePost = () => {
     }
   }, [title, slug]);
 
-
-
-
+  // Function to format text in the content editor
   const formatText = (command, value = null) => {
     document.execCommand(command, false, value);
   };
  
- 
+  // Function to handle form submission
   const handleSubmit = async (e, shouldSaveAsDraft = false) => {
     e.preventDefault();
 
@@ -119,7 +111,7 @@ const CreatePost = () => {
       await api.post('/posts', {
         title,
         slug,
-        description, // Add this
+        description,
         content: contentRef.current.innerHTML,
         categoryIds: selectedCategories,
         isDraft: shouldSaveAsDraft,
@@ -133,7 +125,6 @@ const CreatePost = () => {
     }
   };
 
-
   return (
     <ThemeProvider theme={theme}>
     <Container maxWidth="md">
@@ -143,16 +134,14 @@ const CreatePost = () => {
       backgroundColor: 'background.paper',
       boxShadow: 3, }}>
         <Typography variant="h4" sx={{ fontFamily: 'Merriweather, serif', display: 'flex', alignItems: 'center', mb: 3 }}>
-         
-  Create New Post
-  <Box
-    component="img"
-    src="/images/quill3.jpg" // or a URL
-    alt="Pen"
-    sx={{ width: 40, height: 40, ml: 2 }}
-  /> 
-</Typography>
-
+          Create New Post
+          <Box
+              component="img"
+              src="/images/quill3.jpg"
+              alt="Pen"
+              sx={{ width: 40, height: 40, ml: 2 }}
+          /> 
+        </Typography>
 
         <Box component="form" onSubmit={(e) => handleSubmit(e, false)} sx={{ mt: 3 }}>
           <TextField
@@ -163,18 +152,6 @@ const CreatePost = () => {
             onChange={(e) => setTitle(e.target.value)}
             required
           />
-
-
-          {/*<TextField
-            fullWidth
-            margin="normal"
-            label="Slug"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            helperText="URL-friendly version of your post title"
-            required
-          />*/}
-
 
           <FormControl fullWidth margin="normal">
             <InputLabel>Categories</InputLabel>
@@ -202,8 +179,6 @@ const CreatePost = () => {
             </Select>
           </FormControl>
 
-
-         
           <TextField
             fullWidth
             margin="normal"
@@ -214,7 +189,6 @@ const CreatePost = () => {
             multiline
             rows={3}
           />
-
 
           <Stack direction="row" spacing={1} sx={{ mb: 1, mt: 2 }}>
             <IconButton onClick={() => formatText('bold')}><FormatBoldIcon /></IconButton>
@@ -228,8 +202,6 @@ const CreatePost = () => {
             <IconButton onClick={() => formatText('removeFormat')}><FormatClearIcon /></IconButton>
           </Stack>
 
-
-
           <Box sx={{ position: 'relative', mt: 2, mb: 2 }}>
             <Box
               ref={contentRef}
@@ -239,7 +211,7 @@ const CreatePost = () => {
                 borderRadius: '4px',
                 minHeight: 200,
                 padding: 2,
-                pt: 3, // Add padding top for the label
+                pt: 3,
                 outline: 'none',
                 whiteSpace: 'pre-wrap',
                 '&:hover': {
@@ -274,9 +246,6 @@ const CreatePost = () => {
             </Typography>
           </Box>
 
-
-
-
           <Stack direction="row" spacing={2}>
             <Button
               type="button"
@@ -300,14 +269,10 @@ const CreatePost = () => {
         </Box>
       </Box>
 
-
-
-
       {/* Error/Success notifications */}
       <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
         <Alert severity="error">{error}</Alert>
       </Snackbar>
-
 
       <Snackbar open={success} autoHideDuration={6000} onClose={() => setSuccess(false)}>
         <Alert severity="success">

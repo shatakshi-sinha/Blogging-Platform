@@ -33,7 +33,7 @@ const Navbar = () => {
     >
       <Toolbar>
         <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
-          {/* Logo - Replace with your image path */}
+          {/* Logo */}
 
           <Typography variant="h6" component="div">
             <Button
@@ -45,7 +45,6 @@ const Navbar = () => {
                 alignItems: "center",
                 textTransform: "none",
                 fontSize: "1.25rem",
-                //fontWeight: 'bold',
                 fontFamily: '"Playfair Display", serif',
                 "&:hover": {
                   backgroundColor: "#7A6246",
@@ -61,7 +60,7 @@ const Navbar = () => {
             </Button>
           </Typography>
 
-          {/* Home Button - moved here and styled consistently */}
+          {/* Home Button */}
           <Button
             color="inherit"
             component={Link}

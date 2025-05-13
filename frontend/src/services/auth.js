@@ -1,5 +1,6 @@
 import api from './api';
 
+// Function for logging in
 export const login = async (credentials, rememberMe = false) => {
   try {
     const response = await api.post('/auth/login', credentials);
@@ -7,13 +8,11 @@ export const login = async (credentials, rememberMe = false) => {
     if (!response.data.token) {
       throw new Error('Invalid response from server');
     }
-    
-     // Store based on rememberMe choice
+  
      const storage = rememberMe ? localStorage : sessionStorage;
      storage.setItem('token', response.data.token);
      storage.setItem('user', JSON.stringify(response.data.user));
-     
-    // Store token and user data
+
     localStorage.setItem('token', response.data.token);
     localStorage.setItem('user', JSON.stringify(response.data.user));
     
@@ -33,6 +32,7 @@ export const login = async (credentials, rememberMe = false) => {
   }
 };
 
+// Function for registering a new user
 export const register = async (userData) => {
   try {
     const response = await api.post('/auth/register', userData);
@@ -57,6 +57,7 @@ export const register = async (userData) => {
   }
 };
 
+// Function for logging out
 export const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
@@ -64,11 +65,13 @@ export const logout = () => {
   sessionStorage.removeItem('user');
 };
 
+// Function to get the current user
 export const getCurrentUser = () => {
   const user = localStorage.getItem('user');
   return user ? JSON.parse(user) : null;
 };
 
+// Function to delete the account
 export const deleteAccount = async () => {
-  return await api.delete('/auth/delete'); // assumes /api is prefixed in Axios baseURL
+  return await api.delete('/auth/delete');
 };

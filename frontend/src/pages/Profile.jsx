@@ -53,7 +53,6 @@ const theme = createTheme({
   },
 });
 
-
 const Profile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -112,9 +111,9 @@ const Profile = () => {
 
   const handleUnarchive = async (id) => {
     try {
-      await unarchivePost(id);  // ✅ This returns nothing useful unless backend sends post
+      await unarchivePost(id);
       setSuccess('Post unarchived successfully!');
-      fetchUserPosts();         // ✅ This refreshes posts from backend
+      fetchUserPosts();        
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to unarchive post');
     }

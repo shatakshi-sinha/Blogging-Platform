@@ -32,6 +32,7 @@ const colors = {
   black: '#1E1E1E'
 };
 
+// Main Home component
 const Home = () => {
   const [posts, setPosts] = useState([]);
   const [filteredPosts, setFilteredPosts] = useState([]);
@@ -39,8 +40,9 @@ const Home = () => {
   const [searchFilter, setSearchFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filter, setFilter] = useState('published'); // "published" or "archived"
+  const [filter, setFilter] = useState('published');
 
+  // Fetch posts from API
   useEffect(() => {
     const fetchPosts = async () => {
       setLoading(true);
@@ -105,46 +107,46 @@ const Home = () => {
     <Container maxWidth="lg" sx={{ py: 4, minHeight: '100vh' }}>
       {/* Search and Filter Section */}
       <Paper
-  elevation={2}
-  sx={{
-    mb: 4,
-    p: 3,
-    backgroundColor: colors.beige.medium,
-    borderRadius: 2,
-    border: `1px solid ${colors.beige.dark}`
-  }}
->
-  {/* Search Bar + Dropdown Row */}
-  <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
-    <TextField
-      fullWidth
-      variant="outlined"
-      placeholder="Search posts..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      InputProps={{
-        startAdornment: (
-          <InputAdornment position="start">
-            <SearchIcon sx={{ color: colors.brown.medium }} />
-          </InputAdornment>
-        ),
-        sx: {
-          backgroundColor: colors.white,
-          borderRadius: 1,
-          '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: colors.brown.light,
-          },
-          '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: colors.brown.medium,
-          }
-        }
+      elevation={2}
+      sx={{
+        mb: 4,
+        p: 3,
+        backgroundColor: colors.beige.medium,
+        borderRadius: 2,
+        border: `1px solid ${colors.beige.dark}`
       }}
-    />
+    >
+
+    {/* Search Bar + Dropdown Row */}
+    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+      <TextField
+        fullWidth
+        variant="outlined"
+        placeholder="Search posts..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon sx={{ color: colors.brown.medium }} />
+            </InputAdornment>
+          ),
+          sx: {
+            backgroundColor: colors.white,
+            borderRadius: 1,
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: colors.brown.light,
+            },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: colors.brown.medium,
+           }
+          }
+         }}
+      />
 
     {/* Dropdown for Post Type Filter */}
     <TextField
       select
-      //label="Post Type"
       value={filter}
       onChange={(e) => setFilter(e.target.value)}
       sx={{
@@ -161,35 +163,35 @@ const Home = () => {
       <MenuItem value="published">Published Posts</MenuItem>
       <MenuItem value="archived">Archived Posts</MenuItem>
     </TextField>
-  </Box>
+    </Box>
 
-  {/* Filter Chips */}
-  <Box sx={{
-    display: 'flex',
-    gap: 1,
-    mt: 2,
-    flexWrap: 'wrap'
-  }}>
-    {['all', 'title', 'content', 'categories'].map((filterOption) => (
-      <Chip
-        key={filterOption}
-        label={filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
-        onClick={() => setSearchFilter(filterOption)}
-        sx={{
-          backgroundColor: searchFilter === filterOption
-            ? colors.brown.dark
-            : colors.beige.medium,
-          color: searchFilter === filterOption ? colors.white : colors.brown.dark,
-          '&:hover': {
+    {/* Filter Chips */}
+    <Box sx={{
+      display: 'flex',
+      gap: 1,
+      mt: 2,
+      flexWrap: 'wrap'
+    }}>
+      {['all', 'title', 'content', 'categories'].map((filterOption) => (
+        <Chip
+          key={filterOption}
+          label={filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
+          onClick={() => setSearchFilter(filterOption)}
+          sx={{
             backgroundColor: searchFilter === filterOption
               ? colors.brown.dark
-              : '#D7C4B7'
-          }
-        }}
-      />
-    ))}
-  </Box>
-</Paper>
+              : colors.beige.medium,
+            color: searchFilter === filterOption ? colors.white : colors.brown.dark,
+            '&:hover': {
+              backgroundColor: searchFilter === filterOption
+                ? colors.brown.dark
+                : '#D7C4B7'
+            }
+          }}
+        />
+      ))}
+    </Box>
+    </Paper>
 
 
       {/* Posts Display */}

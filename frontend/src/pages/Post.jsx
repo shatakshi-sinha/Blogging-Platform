@@ -13,7 +13,6 @@ import {
   Button,
   List,
   ListItem,
-  //ListItemText,
   Chip,
   Alert
 } from '@mui/material';
@@ -22,7 +21,7 @@ import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import DOMPurify from 'dompurify';
 
-
+// Post component
 const Post = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -35,7 +34,7 @@ const Post = () => {
   const [userReaction, setUserReaction] = useState(null);
   const { user } = useAuth();
 
-  // Remove the separate comments useEffect and modify the main fetch:
+  // Fetch post data when component mounts
 useEffect(() => {
   const fetchPost = async () => {
     try {
@@ -47,7 +46,6 @@ useEffect(() => {
       
       setPost({
         ...response.data,
-        // Ensure arrays exist even if empty
         categories: response.data.categories || [],
         comments: response.data.comments || []
       });
@@ -99,9 +97,8 @@ useEffect(() => {
     }
   }, [id, post]);
   
-  // Add this handler function
   const handleReaction = async (reactionType) => {
-    if (!user) return; // Don't allow reactions if not logged in
+    if (!user) return; 
   
     try {
       const newReaction = userReaction === reactionType ? null : reactionType;
@@ -161,7 +158,6 @@ useEffect(() => {
     );
   }
 
-  // Additional safety check
   if (!post) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
@@ -228,12 +224,11 @@ useEffect(() => {
         <Typography variant="h3" component="h1" gutterBottom sx={{ 
           color: '#5C4033', // Dark brown
           fontWeight: '500',
-          fontFamily: '"Playfair Display", serif' // Consider a nice font
+          fontFamily: '"Playfair Display", serif' 
         }}>
           {post.title}
         </Typography>
         
-        {/* Replace the existing date display with this: */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <Typography variant="subtitle1" color="#6d412a">
           By {post.name || 'Unknown author'} ({post.username || 'anonymous'})
@@ -246,7 +241,6 @@ useEffect(() => {
           )}
         </Typography>
         </Box>
-        
         
         <Box sx={{  display: 'flex', 
           gap: 2, 
@@ -295,7 +289,7 @@ useEffect(() => {
         
         <Box 
   sx={{ 
-    '& img': { maxWidth: '100%', height: 'auto' }, // Ensure images are responsive
+    '& img': { maxWidth: '100%', height: 'auto' }, 
     '& pre': { 
       backgroundColor: '#f5f5f5', 
       padding: '1rem', 
@@ -314,7 +308,7 @@ useEffect(() => {
         backgroundColor: '#FFFFFF', // White background
         border: '1px solid #E8E0D5', // Light beige border
         borderRadius: '8px',
-        boxShadow: 'none' // Flatter design for comments
+        boxShadow: 'none' 
       }}>
         <Typography variant="h5" gutterBottom color="#5C4033">
           Comments ({(post.comments?.length) || 0})
@@ -382,8 +376,8 @@ useEffect(() => {
     </Container>
   );
 };
-// Add this new component inside Post.jsx
-// Update the Comment component to properly handle nested structure
+
+// Comment component
 const Comment = ({ comment, postId, depth = 0, onDelete, onEdit }) => {
   const [replyContent, setReplyContent] = useState('');
   const [showReplyForm, setShowReplyForm] = useState(false);
@@ -393,6 +387,7 @@ const Comment = ({ comment, postId, depth = 0, onDelete, onEdit }) => {
   const [editedContent, setEditedContent] = useState(comment.content);
   const { user } = useAuth();
 
+  // Handle reply submission
   const handleReplySubmit = async (e) => {
     e.preventDefault();
     if (!replyContent.trim()) return;
@@ -415,17 +410,18 @@ const Comment = ({ comment, postId, depth = 0, onDelete, onEdit }) => {
     }
   };
 
+  // Handle comment deletion
   const handleDelete = async () => {
     try {
       await api.delete(`/comments/${comment.commentID}`);
       setShowDeleteConfirm(false);
-      onDelete(comment.commentID); // Call the passed onDelete handler
+      onDelete(comment.commentID);
     } catch (err) {
       console.error('Failed to delete comment:', err);
     }
   };
-  //const formattedDate = format(new Date(comment.createdAt), 'MMM d, yyyy h:mm a');
 
+  // Handle comment editing
   const handleEditSubmit = async () => {
   try {
     const response = await api.put(`/comments/${comment.commentID}`, {
@@ -433,16 +429,13 @@ const Comment = ({ comment, postId, depth = 0, onDelete, onEdit }) => {
     });
     
     if (response.data) {
-      // Update the comment in the parent state
       onEdit(comment.commentID, editedContent);
       setIsEditing(false);
     } else {
       console.error('Empty response from server');
-      // You might want to set some error state here
     }
   } catch (err) {
     console.error('Error updating comment:', err);
-    // Add error handling UI feedback here
   }
 };
 
@@ -453,14 +446,14 @@ const Comment = ({ comment, postId, depth = 0, onDelete, onEdit }) => {
       borderLeft: depth > 0 ? '2px solid #D2B48C' : 'none', // Beige accent for replies
       mb: 2,
       p: 2,
-      backgroundColor: depth % 2 === 0 ? '#FFFFFF' : '#F9F9F5', // Alternating subtle background
+      backgroundColor: depth % 2 === 0 ? '#FFFFFF' : '#F9F9F5', // Alternate background color for replies
       borderRadius: '4px',
       transition: 'background-color 0.2s',
       '&:hover': {
         backgroundColor: '#F9F9F5' // Slightly darker on hover
       }
     }}>
-      {/* Comment header - make it more prominent */}
+      {/* Comment header */}
       <Box sx={{ 
         display: 'flex', 
         alignItems: 'center', 
@@ -487,7 +480,7 @@ const Comment = ({ comment, postId, depth = 0, onDelete, onEdit }) => {
       )}
       </Box>
       
-      {/* Comment content - updated to support editing */}
+      {/* Comment content */}
       {isEditing ? (
         <Box sx={{ mb: 2 }}>
           <TextField
@@ -522,7 +515,7 @@ const Comment = ({ comment, postId, depth = 0, onDelete, onEdit }) => {
         </Typography>
       )}
       
-      {/* Action buttons - add Edit button */}
+      {/* Buttons */}
       <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
         {user && (
           <Button 

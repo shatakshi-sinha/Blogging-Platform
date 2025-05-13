@@ -13,9 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
-
-
-
+// This component allows users to change their password.
 const ChangePassword = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -23,29 +21,22 @@ const ChangePassword = () => {
     newPassword: '',
     confirmPassword: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false); // Loading state for the button
+  const [error, setError] = useState(''); // Error message state
+  const [success, setSuccess] = useState('');  // Success message state
 
-
-
-
+  // Handle input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-
-
-
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
    
     if (formData.newPassword !== formData.confirmPassword) {
       return setError("New passwords don't match");
     }
-
-
-
 
     setLoading(true);
     try {
@@ -66,18 +57,12 @@ const ChangePassword = () => {
     }
   };
 
-
-
-
   return (
     <Container maxWidth="sm" sx={{ mt: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom align="center">
           Change Password
         </Typography>
-
-
-
 
         <form onSubmit={handleSubmit}>
           <TextField
@@ -91,9 +76,6 @@ const ChangePassword = () => {
             required
           />
 
-
-
-
           <TextField
             fullWidth
             margin="normal"
@@ -105,9 +87,6 @@ const ChangePassword = () => {
             required
           />
 
-
-
-
           <TextField
             fullWidth
             margin="normal"
@@ -118,9 +97,6 @@ const ChangePassword = () => {
             onChange={handleChange}
             required
           />
-
-
-
 
           <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
             <Button
@@ -143,15 +119,9 @@ const ChangePassword = () => {
         </form>
       </Paper>
 
-
-
-
       <Snackbar open={!!error} onClose={() => setError('')}>
         <Alert severity="error">{error}</Alert>
       </Snackbar>
-
-
-
 
       <Snackbar open={!!success} onClose={() => setSuccess('')}>
         <Alert severity="success">{success}</Alert>
@@ -159,8 +129,6 @@ const ChangePassword = () => {
     </Container>
   );
 };
-
-
 
 
 export default ChangePassword;

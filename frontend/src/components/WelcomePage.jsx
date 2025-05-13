@@ -8,7 +8,7 @@ const WelcomePage = () => {
       <Box
         sx={{
           display: "flex",
-          flexDirection: { xs: "column", md: "row" }, // Stack on mobile, row on desktop
+          flexDirection: { xs: "column", md: "row" },
           background: "linear-gradient(to bottom, #F5F5DC, #FFFFFF)",
           alignItems: "center",
           gap: 6,

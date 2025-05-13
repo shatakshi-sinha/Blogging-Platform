@@ -13,11 +13,12 @@ import {
 } from '@mui/material';
 import { login } from '../services/auth';
 
+// Login component
 const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    rememberMe: false  // Add rememberMe state
+    rememberMe: false 
   });
   const [errors, setErrors] = useState({
     email: false,
@@ -59,7 +60,7 @@ const Login = () => {
 
     setLoading(true);
     try {
-      await login(formData, formData.rememberMe);  // Pass rememberMe to login
+      await login(formData, formData.rememberMe);  
       navigate('/home');
     } catch (err) {
       setSubmitError(err.message);

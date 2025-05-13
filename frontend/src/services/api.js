@@ -1,11 +1,9 @@
 import axios from 'axios';
 
-// First create the api instance
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api',
 });
 
-// Add interceptors
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -36,7 +34,7 @@ api.interceptors.response.use(
   }
 );
 
-// Now export API functions AFTER api is initialized
+// Define API methods
 export const getPostReactions = (postId) => api.get(`/reactions/${postId}`);
 export const reactToPost = (data) => api.post('/reactions', data);
 export const updateComment = (commentId, data) => api.put(`/comments/${commentId}`, data);

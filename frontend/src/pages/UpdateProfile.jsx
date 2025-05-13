@@ -14,11 +14,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
-
-
-
+// Function to update user profile
 const UpdateProfile = () => {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
@@ -30,9 +28,7 @@ const UpdateProfile = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-
-
-
+  // Load user data into form when component mounts
   useEffect(() => {
     if (user) {
       setFormData({
@@ -47,7 +43,7 @@ const UpdateProfile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await api.get('/auth/me'); // or '/users/account' if you expose it
+        const res = await api.get('/auth/me'); 
         setFormData({
           username: res.data.username || '',
           name: res.data.name || '',
@@ -62,22 +58,16 @@ const UpdateProfile = () => {
     fetchProfile();
   }, []);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-
-
-
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    setLoading(true); // ✅ start loading
+    setLoading(true); 
   
     if (!formData.username || !formData.name || !formData.email) {
       setError("Username, name and email are required");
-      setLoading(false); // ✅ stop loading
+      setLoading(false); 
       return;
     }
   
@@ -86,71 +76,61 @@ const UpdateProfile = () => {
       setSuccess("Profile updated successfully!");
       setTimeout(() => navigate('/profile'), 2000);
     } catch (err) {
-      console.error("Update failed:", err.response?.data || err.message); // ✅ DEBUG
+      console.error("Update failed:", err.response?.data || err.message); 
       setError(err.response?.data?.message || 'Failed to update profile');
     } finally {
-      setLoading(false); // ✅ stop loading
+      setLoading(false); 
     }
   };
   
-
-
-
-
   return (
     <Container maxWidth="sm" sx={{ mt: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom align="center">
           Update Profile
         </Typography>
-
-
-
-
         <form onSubmit={handleSubmit}>
           
         <TextField
-  label="Username"
-  fullWidth
-  required
-  margin="normal"  // Adds standard vertical spacing
-  value={formData.username}
-  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-  sx={{ mb: 2 }}  // Additional bottom margin (adjust as needed)
-/>
+          label="Username"
+          fullWidth
+          required
+          margin="normal"  
+          value={formData.username}
+          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+          sx={{ mb: 2 }}  
+        />
 
-<TextField
-  label="Name"
-  fullWidth
-  required
-  margin="normal"
-  value={formData.name}
-  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-  sx={{ mb: 2 }}
-/>
+        <TextField
+          label="Name"
+          fullWidth
+          required
+          margin="normal"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          sx={{ mb: 2 }}
+        />
 
-<TextField
-  label="Email"
-  fullWidth
-  required
-  margin="normal"
-  value={formData.email}
-  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-  sx={{ mb: 2 }}
-/>
+        <TextField
+          label="Email"
+          fullWidth
+          required
+          margin="normal"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          sx={{ mb: 2 }}
+        />
 
-<TextField
-  label="Introduction"
-  fullWidth
-  multiline
-  rows={3}
-  margin="normal"
-  value={formData.intro}
-  onChange={(e) => setFormData({ ...formData, intro: e.target.value })}
-  sx={{ mb: 2 }}
-/>
-
-
+        <TextField
+          label="Introduction"
+          fullWidth
+          multiline
+          rows={3}
+          margin="normal"
+          value={formData.intro}
+          onChange={(e) => setFormData({ ...formData, intro: e.target.value })}
+          sx={{ mb: 2 }}
+        />
 
           <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
             <Button
@@ -173,9 +153,6 @@ const UpdateProfile = () => {
         </form>
       </Paper>
 
-
-
-
       <Snackbar
         open={!!error}
         autoHideDuration={6000}
@@ -184,9 +161,6 @@ const UpdateProfile = () => {
       >
         <Alert severity="error">{error}</Alert>
       </Snackbar>
-
-
-
 
       <Snackbar
         open={!!success}
@@ -199,8 +173,5 @@ const UpdateProfile = () => {
     </Container>
   );
 };
-
-
-
 
 export default UpdateProfile;
