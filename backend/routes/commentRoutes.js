@@ -4,7 +4,6 @@ const commentController = require('../controllers/commentController');
 const authMiddleware = require('../middlewares/authMiddleware');
 
 // Public routes
-//router.get('/posts/:postId', commentController.getCommentsByPostId);
 router.get('/posts/:postId/comments', commentController.getCommentsByPostId);
 
 // Protected routes

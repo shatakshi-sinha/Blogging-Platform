@@ -6,7 +6,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 // Public routes
 router.get('/', categoryController.getAllCategories);
 
-// Protected routes (admin only)
+// Protected routes 
 router.post('/', authMiddleware, categoryController.createCategory);
 
 module.exports = router;

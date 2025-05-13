@@ -1,11 +1,16 @@
 const db = require('../config/db');
 
+/**
+ * Allows a user to react to a post.
+ * @param {Object} req - The request object.
+ * @param {Object} res - The response object.
+ */
 exports.reactToPost = async (req, res) => {
   try {
     const { postId, reactionType } = req.body;
     const userId = req.user.id;
 
-    // First remove any existing reaction from this user
+    // Remove any existing reaction from this user
     await db.execute(
       `DELETE FROM post_reactions 
        WHERE userID = ? AND postID = ?`,
@@ -46,6 +51,11 @@ exports.reactToPost = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves the reactions for a specific post.
+ * @param {Object} req - The request object.
+ * @param {Object} res - The response object.
+ */
 exports.getPostReactions = async (req, res) => {
   try {
     const { postId } = req.params;

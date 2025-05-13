@@ -2,8 +2,6 @@ const db = require('../config/db');
 
 module.exports = async (req, res, next) => {
   try {
-    // Skip ownership check for admin users if you have that role
-    // if (req.user.role === 'admin') return next();
     
     const [post] = await db.execute(
       'SELECT userID FROM post WHERE postID = ?',

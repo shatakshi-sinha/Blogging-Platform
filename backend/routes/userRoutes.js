@@ -6,8 +6,8 @@ const authMiddleware = require('../middlewares/authMiddleware');
 // Public routes
 router.get('/:userId', userController.getPublicProfile);
 
-// Protected routes (require authentication)
-router.use(authMiddleware); // Apply auth middleware to all routes below
+// Protected routes 
+router.use(authMiddleware);
 
 // Profile updates
 router.put('/profile', userController.updateProfile);
