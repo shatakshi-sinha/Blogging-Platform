@@ -105,7 +105,7 @@ const Home = () => {
     <Container maxWidth="lg" sx={{ py: 4, minHeight: '100vh' }}>
       {/* Search and Filter Section */}
       <Paper
-  elevation={0}
+  elevation={2}
   sx={{
     mb: 4,
     p: 3,

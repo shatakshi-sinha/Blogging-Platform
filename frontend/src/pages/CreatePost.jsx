@@ -28,6 +28,26 @@ import FormatAlignRightIcon from '@mui/icons-material/FormatAlignRight';
 import FormatAlignJustifyIcon from '@mui/icons-material/FormatAlignJustify';
 import TitleIcon from '@mui/icons-material/Title';
 
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#795548', // brown
+    },
+    secondary: {
+      main: '#d7ccc8', // light beige
+    },
+    background: {
+      default: '#fffaf0', // light cream
+      paper: '#f5f5f5',
+    },
+    text: {
+      primary: '#212121',
+      secondary: '#4e342e',
+    },
+  },
+});
 
 
 
@@ -88,7 +108,7 @@ const CreatePost = () => {
     e.preventDefault();
 
     if (!title || !slug) {
-      setError('Title and slug are required');
+      setError('Title is required');
       return;
     }
 
@@ -115,11 +135,23 @@ const CreatePost = () => {
 
 
   return (
+    <ThemeProvider theme={theme}>
     <Container maxWidth="md">
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Create New Post
-        </Typography>
+      <Box sx={{  mt: 4,
+      p: 4,
+      borderRadius: 2,
+      backgroundColor: 'background.paper',
+      boxShadow: 3, }}>
+        <Typography variant="h4" sx={{ fontFamily: 'Merriweather, serif', display: 'flex', alignItems: 'center', mb: 3 }}>
+         
+  Create New Post
+  <Box
+    component="img"
+    src="/images/quill3.jpg" // or a URL
+    alt="Pen"
+    sx={{ width: 40, height: 40, ml: 2 }}
+  /> 
+</Typography>
 
 
         <Box component="form" onSubmit={(e) => handleSubmit(e, false)} sx={{ mt: 3 }}>
@@ -133,7 +165,7 @@ const CreatePost = () => {
           />
 
 
-          <TextField
+          {/*<TextField
             fullWidth
             margin="normal"
             label="Slug"
@@ -141,7 +173,7 @@ const CreatePost = () => {
             onChange={(e) => setSlug(e.target.value)}
             helperText="URL-friendly version of your post title"
             required
-          />
+          />*/}
 
 
           <FormControl fullWidth margin="normal">
@@ -283,6 +315,7 @@ const CreatePost = () => {
         </Alert>
       </Snackbar>
     </Container>
+    </ThemeProvider>
   );
 };
 

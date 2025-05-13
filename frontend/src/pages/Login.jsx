@@ -71,11 +71,15 @@ const Login = () => {
   return (
     <Container maxWidth="xs">
       <Box sx={{ 
-        mt: 8,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center'
-      }}>
+              mt: 8,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              p: 4,
+              boxShadow: 3,
+              borderRadius: 2,
+              backgroundColor: 'background.paper'
+            }}>
         <Typography variant="h4" component="h1" gutterBottom>
           Login
         </Typography>

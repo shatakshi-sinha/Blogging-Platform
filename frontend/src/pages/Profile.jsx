@@ -32,6 +32,27 @@ import { formatPostDateTime } from '../utils/dateUtils';
 import { deleteAccount } from '../services/auth';
 import { archivePost, unarchivePost } from '../services/api';
 import { Save } from '@mui/icons-material';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#795548', // brown
+    },
+    secondary: {
+      main: '#d7ccc8', // light beige
+    },
+    background: {
+      default: '#fffaf0', // light cream
+      paper: '#f5f5f5',
+    },
+    text: {
+      primary: '#212121',
+      secondary: '#4e342e',
+    },
+  },
+});
+
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -230,8 +251,9 @@ const Profile = () => {
   }
 
   return (
+    <ThemeProvider theme={theme}>
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <Avatar
             sx={{
@@ -244,7 +266,7 @@ const Profile = () => {
           >
             {profile?.name?.charAt(0).toUpperCase()}
           </Avatar>
-          <Box sx={{ flexGrow: 1 }}>
+          <Box sx={{ flexGrow: 1, mt: 2 }}>
             <Typography variant="h4" component="h1" gutterBottom>
               {profile?.name}
             </Typography>
@@ -274,7 +296,10 @@ const Profile = () => {
       <Tabs
         value={tabValue}
         onChange={(e, newValue) => setTabValue(newValue)}
-        sx={{ mb: 3 }}
+        sx={{ mb: 3, borderBottom: 1,
+    borderColor: 'divider',
+    backgroundColor: 'background.paper',
+    borderRadius: 1, }}
         variant="fullWidth"
       >
         <Tab label="My Posts" icon={<Edit />} />
@@ -283,172 +308,126 @@ const Profile = () => {
       </Tabs>
      
       {tabValue === 0 && (
-        <Box>
-          <Typography variant="h5" component="h2" gutterBottom>
-            My Posts ({posts.length})
-          </Typography>
-         
-          {posts.length > 0 ? (
-            <List sx={{ bgcolor: 'background.paper' }}>
-              {posts.map(post => (
-                <React.Fragment key={post.postID}>
-                  <ListItem alignItems="flex-start">
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Typography variant="h6" component="span">
-                            {post.title}
-                          </Typography>
-                          {post.status === 'draft' && (
-                            <Chip 
-                              label="Draft" 
-                              size="small" 
-                              color="warning"
-                              sx={{ 
+  <Paper sx={{ p: 3, borderRadius: 2 }}>
+    <Typography variant="h5" component="h2" gutterBottom>
+      My Posts ({posts.length})
+    </Typography>
+
+    {posts.length > 0 ? (
+      <List sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
+        {posts.map((post) => (
+          <React.Fragment key={post.postID}>
+            <ListItem
+              alignItems="flex-start"
+              sx={{
+                px: 2,
+                //py: 2,
+                '&:hover': { backgroundColor: 'action.hover' },
+              }}
+            >
+              <ListItemText
+                primary={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h6">{post.title}</Typography>
+                    {post.status === 'draft' && (
+                      <Chip label="Draft" size="small" color="warning"
+                       sx={{ 
                                 ml: 1, 
                                 backgroundColor: '#FBDB93',
                                 color: '#5D4037',
                                 fontWeight: 'bold',
-                                border: '1px solid #FFD600'
-                              }} 
-                            />
-                          )}
-                          {post.archived && (
-                            <Chip 
-                              label="Archived" 
-                              size="small" 
-                              sx={{ 
+                                border: '1px solid rgb(255, 187, 0)'
+                              }} />
+                    )}
+                    {post.archived && (
+                      <Chip label="Archived" size="small" sx={{ 
                                 ml: 1, 
                                 backgroundColor: '#EF9A9A',
                                 color: '#5D4037',
                                 fontWeight: 'bold',
                                 border: '1px solid #EF5350'
-                              }} 
-                            />
-                          )}
-                        </Box>
-                      }
-                      secondary={
-                        <>
-                          <Typography
-                            component="span"
-                            variant="body2"
-                            color="text.primary"
-                            display="block"
-                            sx={{ mb: 1 }}
-                          >
-                            {formatPostDateTime(post)}
-                          </Typography>
-                          <Typography
-                            component="span"
-                            variant="body2"
-                            color="text.secondary"
-                          >
-                            {post.description || "No description available"}
-                          </Typography>
-                        </>
-                      }
-                      sx={{ mr: 2 }}
-                    />
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      {post.status === 'draft' && (
-                        <Button
-                          variant="contained"
-                          size="small"
-                          color="success"
-                          onClick={() => handlePublishDraft(post.postID)}
-                          sx={{ 
-                            alignSelf: 'center',
-                            textTransform: 'none'
-                          }}
-                        >
-                          Publish
-                        </Button>
-                      )}
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <IconButton 
-                          onClick={() => handleEditClick(post)}
-                          sx={{ 
-                            color: '#5C4033',
-                            '&:hover': {
-                              backgroundColor: 'rgba(139, 69, 19, 0.1)'
-                            }
-                          }}
-                        >
-                          <Edit />
-                        </IconButton>
-                        {post.archived ? (
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => handleUnarchive(post.postID)}
-                            sx={{
-                              alignSelf: 'center',
-                              textTransform: 'none',
-                              color: '#5C4033',
-                              borderColor: '#5C4033',
-                              '&:hover': {
-                                backgroundColor: 'rgba(139, 69, 19, 0.1)',
-                                borderColor: '#5C4033'
-                              }
-                            }}
-                          >
-                            Unarchive
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => handleArchive(post.postID)}
-                            sx={{
-                              alignSelf: 'center',
-                              textTransform: 'none',
-                              color: '#5C4033',
-                              borderColor: '#5C4033',
-                              '&:hover': {
-                                backgroundColor: 'rgba(139, 69, 19, 0.1)',
-                                borderColor: '#5C4033'
-                              }
-                            }}
-                          >
-                            Archive
-                          </Button>
-                        )}
-                        <IconButton 
-                          onClick={() => setDeleteConfirm(post.postID)}
-                          sx={{ 
-                            color: '#d32f2f',
-                            '&:hover': {
-                              backgroundColor: 'rgba(211, 47, 47, 0.1)'
-                            }
-                          }}
-                        >
-                          <Delete />
-                        </IconButton>
-                      </Box>
-                    </Box>
-                  </ListItem>
-                  <Divider component="li" />
-                </React.Fragment>
-              ))}
-            </List>
-          ) : (
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body1" color="text.secondary">
-                You haven't written any posts yet.
-              </Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                sx={{ mt: 2 }}
-                onClick={() => navigate('/create-post')}
-              >
-                Create Your First Post
-              </Button>
-            </Paper>
-          )}
-        </Box>
-      )}
+                              }}  />
+                    )}
+                  </Box>
+                }
+                secondary={
+                  <>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                    >
+                      {formatPostDateTime(post)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {post.description || 'No description available'}
+                    </Typography>
+                  </>
+                }
+              />
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                {post.status === 'draft' && (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    color="success"
+                    onClick={() => handlePublishDraft(post.postID)}
+                  >
+                    Publish
+                  </Button>
+                )}
+                <IconButton onClick={() => handleEditClick(post)} color="primary">
+                  <Edit fontSize="small" />
+                </IconButton>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() =>
+                    post.archived
+                      ? handleUnarchive(post.postID)
+                      : handleArchive(post.postID)
+                  }
+                >
+                  {post.archived ? 'Unarchive' : 'Archive'}
+                </Button>
+                <IconButton
+                  onClick={() => setDeleteConfirm(post.postID)}
+                  color="error"
+                >
+                  <Delete />
+                </IconButton>
+              </Box>
+            </ListItem>
+            <Divider component="li" />
+          </React.Fragment>
+        ))}
+      </List>
+    ) : (
+      <Paper
+        elevation={0}
+        sx={{
+          p: 4,
+          textAlign: 'center',
+          backgroundColor: '#f5f5f5',
+          borderRadius: 2,
+        }}
+      >
+        <Typography variant="body1" color="text.secondary">
+          You haven't written any posts yet.
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{ mt: 2 }}
+          onClick={() => navigate('/create-post')}
+        >
+          Create Your First Post
+        </Button>
+      </Paper>
+    )}
+  </Paper>
+)}
+
      
      {tabValue === 1 && (
   <Paper sx={{ p: 3 }}>
@@ -466,12 +445,12 @@ const Profile = () => {
         InputProps={{
           readOnly: !isEditingAbout,
         }}
-        sx={{ mb: 2 }}
+        sx={{ mt:2, mb: 2 }}
       />
       <IconButton
         sx={{ 
           position: 'absolute', 
-    top: 8, 
+    top: 22, 
     right: 8,
     border: '1px solid',
     borderColor: 'grey.300',
@@ -496,7 +475,7 @@ const Profile = () => {
       Account Information
     </Typography>
    
-    <Box sx={{ mb: 3 }}>
+    <Box sx={{ mt:2, mb: 3 }}>
       <Typography variant="subtitle2" color="text.secondary">
         Username
       </Typography>
@@ -870,6 +849,7 @@ const Profile = () => {
         </Alert>
       </Snackbar>
     </Container>
+    </ThemeProvider>
   );
 };
 
