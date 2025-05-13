@@ -113,35 +113,42 @@ const UpdateProfile = () => {
   label="Username"
   fullWidth
   required
+  margin="normal"  // Adds standard vertical spacing
   value={formData.username}
   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+  sx={{ mb: 2 }}  // Additional bottom margin (adjust as needed)
 />
 
 <TextField
   label="Name"
   fullWidth
   required
+  margin="normal"
   value={formData.name}
   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+  sx={{ mb: 2 }}
 />
 
 <TextField
   label="Email"
   fullWidth
   required
+  margin="normal"
   value={formData.email}
   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+  sx={{ mb: 2 }}
 />
 
 <TextField
-  label="Intro"
+  label="Introduction"
   fullWidth
   multiline
   rows={3}
+  margin="normal"
   value={formData.intro}
   onChange={(e) => setFormData({ ...formData, intro: e.target.value })}
+  sx={{ mb: 2 }}
 />
-
 
 
 

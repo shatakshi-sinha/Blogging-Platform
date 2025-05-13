@@ -144,7 +144,7 @@ const Home = () => {
     {/* Dropdown for Post Type Filter */}
     <TextField
       select
-      label="Post Type"
+      //label="Post Type"
       value={filter}
       onChange={(e) => setFilter(e.target.value)}
       sx={{

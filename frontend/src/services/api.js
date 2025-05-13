@@ -45,6 +45,7 @@ export const changePassword = (data) => api.put('/users/change-password', data);
 export const archivePost = (id) => api.put(`/posts/archive/${id}`);
 export const unarchivePost = (id) => api.put(`/posts/unarchive/${id}`);
 export const fetchArchivedPosts = () => api.get('/posts/archived');
+export const updateAbout = (aboutText) => api.put('/users/about', { about: aboutText });
 
 export default api;
 

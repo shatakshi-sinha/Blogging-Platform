@@ -24,13 +24,14 @@ import {
   Snackbar,
   Alert
 } from '@mui/material';
-import { Edit, Delete, Settings, Logout, DeleteForever } from '@mui/icons-material';
+import { Edit, Delete, Settings, Logout, DeleteForever, Person } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { formatPostDateTime } from '../utils/dateUtils';
 import { deleteAccount } from '../services/auth';
 import { archivePost, unarchivePost } from '../services/api';
+import { Save } from '@mui/icons-material';
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -48,6 +49,7 @@ const Profile = () => {
   const [password, setPassword] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [isEditingAbout, setIsEditingAbout] = useState(false);
   const editorRef = useRef(null);
 
   // Formatting functions for the rich text editor
@@ -204,6 +206,16 @@ const Profile = () => {
     }
   };
 
+  const handleSaveAbout = async () => {
+  try {
+    await api.put('/users/about', { about: profile.profile });
+    setSuccess('About section updated successfully!');
+    setIsEditingAbout(false);
+  } catch (err) {
+    setError(err.response?.data?.message || 'Failed to update about section');
+  }
+};
+
   const handleCloseSnackbar = () => {
     setError('');
     setSuccess('');
@@ -266,6 +278,7 @@ const Profile = () => {
         variant="fullWidth"
       >
         <Tab label="My Posts" icon={<Edit />} />
+        <Tab label="About the Author" icon={<Person />} />
         <Tab label="Account Settings" icon={<Settings />} />
       </Tabs>
      
@@ -440,6 +453,46 @@ const Profile = () => {
      {tabValue === 1 && (
   <Paper sx={{ p: 3 }}>
     <Typography variant="h5" component="h2" gutterBottom>
+      About the Author
+    </Typography>
+    
+    <Box sx={{ position: 'relative' }}>
+      <TextField
+        fullWidth
+        multiline
+        rows={8}
+        value={profile?.profile || ''}
+        onChange={(e) => setProfile({ ...profile, profile: e.target.value })}
+        InputProps={{
+          readOnly: !isEditingAbout,
+        }}
+        sx={{ mb: 2 }}
+      />
+      <IconButton
+        sx={{ 
+          position: 'absolute', 
+    top: 8, 
+    right: 8,
+    border: '1px solid',
+    borderColor: 'grey.300',
+    backgroundColor: 'background.paper',
+    color: 'text.secondary',
+    '&:hover': {
+      backgroundColor: 'grey.100',
+      color: 'primary.main',
+    }
+        }}
+        onClick={isEditingAbout ? handleSaveAbout : () => setIsEditingAbout(true)}
+      >
+        {isEditingAbout ? <Save /> : <Edit />}
+      </IconButton>
+    </Box>
+  </Paper>
+)}
+
+     {tabValue === 2 && (
+  <Paper sx={{ p: 3 }}>
+    <Typography variant="h5" component="h2" gutterBottom>
       Account Information
     </Typography>
    
@@ -503,7 +556,7 @@ const Profile = () => {
     </Box>
   </Paper>
 )}
-
+      
       {/* Edit Dialog with Complete Rich Text Editor */}
       <Dialog
         open={!!editingPost}

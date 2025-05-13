@@ -158,3 +158,22 @@ await db.execute(
     res.status(500).json({ message: "Failed to change password" });
   }
 };
+
+exports.updateAbout = async (req, res) => {
+  try {
+    const { about } = req.body; // Expects { about: "New text here" }
+    const userId = req.user.id;
+
+    await db.execute(
+      `UPDATE user SET profile = ? WHERE userID = ?`,
+      [about, userId]
+    );
+
+    res.json({ 
+      success: true, 
+      message: "About section updated successfully" 
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update about section" });
+  }
+};

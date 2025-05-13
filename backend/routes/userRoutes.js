@@ -12,6 +12,7 @@ router.use(authMiddleware); // Apply auth middleware to all routes below
 // Profile updates
 router.put('/profile', userController.updateProfile);
 router.put('/change-password', userController.changePassword);
+router.put('/about', userController.updateAbout);
 
 // Account management routes
 router.route('/account')
