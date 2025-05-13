@@ -44,7 +44,7 @@ const CreatePost = () => {
   const navigate = useNavigate();
   const [description, setDescription] = useState('');
   const [isDraft, setIsDraft] = useState(false); 
-
+  const [contentFocused, setContentFocused] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -184,10 +184,7 @@ const CreatePost = () => {
           />
 
 
-          <Typography sx={{ mt: 2, mb: 1 }}>Content</Typography>
-
-
-          <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+          <Stack direction="row" spacing={1} sx={{ mb: 1, mt: 2 }}>
             <IconButton onClick={() => formatText('bold')}><FormatBoldIcon /></IconButton>
             <IconButton onClick={() => formatText('italic')}><FormatItalicIcon /></IconButton>
             <IconButton onClick={() => formatText('underline')}><FormatUnderlinedIcon /></IconButton>
@@ -201,21 +198,49 @@ const CreatePost = () => {
 
 
 
-
-          <Box
-            ref={contentRef}
-            contentEditable
-            sx={{
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              minHeight: 200,
-              padding: 2,
-              mb: 2,
-              outline: 'none',
-              whiteSpace: 'pre-wrap'
-            }}
-            onInput={(e) => setContent(e.currentTarget.innerHTML)}
-          />
+          <Box sx={{ position: 'relative', mt: 2, mb: 2 }}>
+            <Box
+              ref={contentRef}
+              contentEditable
+              sx={{
+                border: '1px solid rgba(0, 0, 0, 0.23)',
+                borderRadius: '4px',
+                minHeight: 200,
+                padding: 2,
+                pt: 3, // Add padding top for the label
+                outline: 'none',
+                whiteSpace: 'pre-wrap',
+                '&:hover': {
+                  borderColor: 'text.primary',
+                },
+                '&:focus-within': {
+                  borderColor: 'primary.main',
+                  borderWidth: '2px',
+                },
+              }}
+              onInput={(e) => setContent(e.currentTarget.innerHTML)}
+              onFocus={() => setContentFocused(true)}
+              onBlur={() => setContentFocused(!!content)}
+            />
+            <Typography
+              component="span"
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                transform: content || contentFocused 
+                  ? 'translate(14px, -50%) scale(0.75)' 
+                  : 'translate(14px, 16px) scale(1)',
+                backgroundColor: content || contentFocused ? 'background.paper' : 'transparent',
+                padding: '0 4px',
+                color: contentFocused ? 'primary.main' : 'text.secondary',
+                pointerEvents: 'none',
+                transition: 'transform 200ms cubic-bezier(0.0, 0, 0.2, 1) 0ms',
+              }}
+            >
+              Content
+            </Typography>
+          </Box>
 
 
 
